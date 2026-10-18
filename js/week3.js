@@ -128,6 +128,28 @@ window.PE_WEEKS[3] = {
       goal: "Выучить слова о жилье и понять объявление о сдаче квартиры.",
       blocks: [
         {
+          type: "checklist", id: "mon-hw", title: "Хвосты Week 2",
+          task: "Домашнее задание с урока 15.10. Если что-то не успели — сделайте сегодня, до новой темы.",
+          items: [
+            "MyGrammarLab · Unit 39 · стр. 94–95 (Present Continuous)",
+            "MyGrammarLab · Module 5 Review · стр. 103–106 · 2 упражнения на выбор",
+            "В тетради: 6 предложений «Моя неделя» — 2 привычки, 2 «сейчас / временно», 2 плана",
+            "Сайт: Week 2 · Пт · Week 2 in review (тест и пост Анны)",
+          ],
+        },
+        {
+          type: "choice", id: "mon-recap", title: "Week 2 recap",
+          task: "Разминка: вспомним прошлую неделю. Simple или Continuous?",
+          items: [
+            ["___ you have a work permit?", ["Do", "Are"], 0],
+            ["How long ___ you staying in Lisbon?", ["do", "are"], 1],
+            ["The Airport Express ___ every 15 minutes.", ["leaves", "is leaving"], 0],
+            ["I ___ my landlord at 6 today — it's in my diary.", ["meet", "'m meeting"], 1],
+            ["— Are you travelling alone? — Yes, ___.", ["I am", "I do"], 0],
+            ["This month Anna ___ in a hotel.", ["stays", "is staying"], 1],
+          ],
+        },
+        {
           type: "write", id: "mon-warm", title: "Warm-up · My home now",
           task: "Ответьте 2–3 предложениями. Ошибки не страшны!",
           prompt: "Where do you live? Is it a flat or a house? Do you like it?",

@@ -83,7 +83,6 @@
     const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
     document.querySelectorAll("[data-nav]").forEach((a) => a.classList.toggle("active", parts[0] === a.dataset.nav));
     window.scrollTo(0, 0);
-    if (!student() && parts[0]) return renderHome();
     if (parts[0] === "week" && WEEKS[parts[1]]) {
       const w = WEEKS[parts[1]];
       if (parts[2] === "vocab" && w.vocab) return renderVocab(w);
@@ -94,6 +93,20 @@
       return renderWeek(w);
     }
     renderHome();
+  }
+
+  // ───────── имя ученицы (без него сайт работает, имя нужно только для отправки)
+  function nameBar() {
+    const n = student();
+    return `<div class="namebar"><span>${n ? "Вы занимаетесь как" : "Кто вы?"}</span>${STUDENTS.map((s) => `<button type="button" class="chip ${s === n ? "on" : ""}" data-name="${s}">${s}</button>`).join("")}</div>`;
+  }
+  function wireNames(el) {
+    el.querySelectorAll(".namebar [data-name]").forEach((b) => b.addEventListener("click", () => {
+      store.set("student", b.dataset.name);
+      el.querySelectorAll(".namebar [data-name]").forEach((x) => x.classList.toggle("on", x === b));
+      const lbl = el.querySelector(".namebar > span"); if (lbl) lbl.textContent = "Вы занимаетесь как";
+      toast(`Отлично, ${b.dataset.name}! Ответы будут подписаны вашим именем`);
+    }));
   }
 
   // ───────── HOME
@@ -109,7 +122,8 @@
           <p class="lead">Ваше учебное пространство: план недели, задания на каждый день и связь с преподавателем. Пять дней — одна история переезда.</p>
           <div class="hero-actions">
             <a class="btn primary" href="#/week/3">Открыть Week 3 · ${esc(w.title)} →</a>
-            <a class="btn ghost" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Доска группы в Miro ↗</a>
+            <a class="btn ghost" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Доска Miro ↗</a>
+            ${CFG.zoomLink ? `<a class="btn zoom" href="${esc(CFG.zoomLink)}" target="_blank" rel="noopener">Zoom · Чт 10:00 ↗</a>` : ""}
           </div>
         </div>
 
@@ -228,7 +242,9 @@
             ${d.deadline ? `<div><dt>Срок</dt><dd>${esc(d.deadline)}</dd></div>` : ""}
           </dl>
           ${hasWork ? `<div class="progress"><span class="bar"><i id="dayBar"></i></span><span id="dayPct"></span></div>` : ""}
+          ${nameBar()}
         </header>
+        <nav class="jump" aria-label="Задания дня">${(() => { let k = 0; return d.blocks.filter((b) => b.type !== "heading").map((b) => `<button type="button" data-jump="${b.id}"><b>${String(++k).padStart(2, "0")}</b> ${esc(b.title.split(" · ")[0])}</button>`).join(""); })()}</nav>
         <div class="blocks"></div>
         ${hasWork ? sendPanelHtml() : ""}
         <nav class="pager">
@@ -238,6 +254,11 @@
       </section>`);
     main.appendChild(el);
 
+    wireNames(el);
+    el.querySelectorAll("[data-jump]").forEach((j) => j.addEventListener("click", () => {
+      const t = document.getElementById(j.dataset.jump);
+      if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 130, behavior: "smooth" });
+    }));
     const wrap = el.querySelector(".blocks");
     let k = 0;
     d.blocks.forEach((b) => wrap.appendChild(renderBlock(b, b.type === "heading" ? 0 : ++k, w, d)));
@@ -266,13 +287,39 @@
   }
 
   function checkBar(b) {
-    return `<div class="checkbar"><button type="button" class="btn small primary" data-check>Проверить</button><button type="button" class="btn small ghost" data-reset>Заново</button><span class="score" aria-live="polite"></span></div>`;
+    return `<div class="checkbar"><button type="button" class="btn small primary" data-check>Проверить</button><button type="button" class="btn small ghost" data-reveal hidden>Показать ответы</button><button type="button" class="btn small ghost" data-reset>Заново</button><span class="score" aria-live="polite"></span></div>`;
   }
 
   function renderBlock(b, n, w, d) {
     if (b.type === "heading") return h(`<h2 class="blocks-heading">${esc(b.title)}</h2>`);
     const r = { vocab, vocabref, order, listen, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
-    return r ? r(b, n, w, d) : shell(b, n, "");
+    const el = r ? r(b, n, w, d) : shell(b, n, "");
+    const rv = el.querySelector("[data-reveal]");
+    if (rv) {
+      const a = ans(b.id);
+      const sync = () => { rv.hidden = !a.checked || a.revealed; };
+      sync();
+      el.querySelector("[data-check]").addEventListener("click", () => setTimeout(sync, 0));
+      rv.addEventListener("click", () => {
+        if (!a.firstScore) a.firstScore = a.score;
+        fillCorrect(b, a); a.revealed = true; a.checked = true; save();
+        const fresh = renderBlock(b, n, w, d); el.replaceWith(fresh);
+        const sc = fresh.querySelector(".score"); if (sc) sc.textContent = `Ваш результат: ${a.firstScore.replace("/", " из ")} · ответы показаны`;
+      });
+      el.querySelector("[data-reset]").addEventListener("click", () => { delete a.revealed; delete a.firstScore; });
+    }
+    return el;
+  }
+
+  function fillCorrect(b, a) {
+    switch (b.type) {
+      case "match": a.sel = {}; b.pairs.forEach((p, i) => (a.sel[i] = p[1])); break;
+      case "choice": a.sel = {}; b.items.forEach((it, i) => (a.sel[i] = it[2])); break;
+      case "tf": a.sel = {}; b.items.forEach((it, i) => (a.sel[i] = it[1])); break;
+      case "gap": a.val = {}; b.items.forEach((it, i) => (a.val[i] = it[1][0])); break;
+      case "order": a.seq = b.items.map((_, i) => i); break;
+      case "builder": a.built = {}; b.items.forEach((s, i) => (a.built[i] = s.split(" ").map((_, k) => k))); break;
+    }
   }
 
   // ───────── словарь недели (отдельная страница)
@@ -348,7 +395,7 @@
     };
     const check = () => { const ok = draw(true); a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(order(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     draw(false); if (a.checked) check();
     return el;
   }
@@ -402,7 +449,7 @@
       el.querySelector(".score").textContent = `${ok} из ${b.pairs.length}`; changed(el);
     };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(match(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     if (a.checked) check();
     return el;
   }
@@ -443,7 +490,7 @@
     }));
     const check = () => { const ok = paint(true); a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(choice(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     paint(false); if (a.checked) check();
     return el;
   }
@@ -475,7 +522,7 @@
     }));
     const check = () => { const ok = paint(true); a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(tf(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     paint(false); if (a.checked) check();
     return el;
   }
@@ -506,7 +553,7 @@
     const all = (show) => [...el.querySelectorAll("li[data-i]")].map((li) => draw(li, show)).filter(Boolean).length;
     const check = () => { const ok = all(true); a.checked = true; a.score = `${ok}/${b.items.length}`; a.text = b.items.map((s, i) => (a.built[i] || []).map((k) => tokens(s)[k]).join(" ")); el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(builder(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     all(false); if (a.checked) check();
     return el;
   }
@@ -533,7 +580,7 @@
       a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el);
     };
     el.querySelector("[data-check]").addEventListener("click", check);
-    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(gap(b, n)); save(); });
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     if (a.checked) check();
     return el;
   }
@@ -726,7 +773,7 @@
         case "voice": answer = a.recorded ? "голосовое записано, отправлено отдельно" : "нет записи"; break;
         case "checklist": { const items = b.fromCanDo ? w.canDo : b.items; answer = items.map((it, k) => `${a.checks && a.checks[k] ? "✅" : "▫️"} ${it}`).join("\n"); break; }
       }
-      rows.push({ n, task: `${n}. ${b.title}`, type: TYPE_RU[b.type], answer, score: autoTypes.has(b.type) || b.type === "order" ? (a.checked ? a.score : "не проверено") : "" });
+      rows.push({ n, task: `${n}. ${b.title}`, type: TYPE_RU[b.type], answer, score: autoTypes.has(b.type) ? (a.checked ? (a.firstScore ? `${a.firstScore} (потом открыла ответы)` : a.score) : "не проверено") : "" });
     });
     return rows;
   }
@@ -752,7 +799,7 @@
     });
 
     el.querySelector("#sendBtn").addEventListener("click", async () => {
-      if (!student()) { toast("Сначала выберите имя на главной"); location.hash = "#/"; return; }
+      if (!student()) { toast("Выберите своё имя вверху страницы"); el.querySelector(".namebar").scrollIntoView({ behavior: "smooth", block: "center" }); el.querySelector(".namebar").classList.add("flash"); return; }
       const text = report(w, d, note());
       const mark = () => { const t = new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); store.set(key, t); stamp.textContent = `Последняя отправка: ${t}`; };
       if (CFG.submitUrl) {
@@ -789,6 +836,7 @@
 
   // ───────── шапка
   document.getElementById("miroTop").href = CFG.miroBoard || "#";
+  const zt = document.getElementById("zoomTop"); if (CFG.zoomLink) zt.href = CFG.zoomLink; else zt.remove();
   document.getElementById("footTeacher").textContent = `преподаватель ${CFG.teacherName || ""}`;
 
   // озвучка объявления

@@ -412,4 +412,20 @@ table.mini th { color: var(--rust); width: 56px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
+/* ── v3: name bar, jump nav, zoom */
+.btn.zoom { background: #2D8CFF; border-color: #2D8CFF; color: #fff; }
+.btn.zoom:hover { background: #1A6FD6; border-color: #1A6FD6; }
+.topnav .zoomlink { background: #2D8CFF; color: #fff; }
+.topnav .zoomlink:hover { background: #1A6FD6; }
+.namebar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 500 14px var(--sans); color: var(--muted); }
+.namebar .chip { padding: 7px 14px; font-size: 14px; }
+.namebar.flash { animation: flash 1.2s 2; border-radius: 999px; }
+@keyframes flash { 50% { box-shadow: 0 0 0 6px var(--blush); background: var(--blush); } }
+.jump { position: sticky; top: 61px; z-index: 10; display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; margin: -10px 0 18px; background: var(--cream); scrollbar-width: none; }
+.jump::-webkit-scrollbar { display: none; }
+.jump button { flex: none; font: 500 13px var(--sans); padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.jump button b { color: var(--rust); font-weight: 700; margin-right: 2px; }
+.jump button:hover { border-color: var(--ink); }
+@media (max-width: 640px) { .jump { top: 57px; } }
+
 [hidden] { display: none !important; }

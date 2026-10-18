@@ -10,7 +10,7 @@ window.PE_CONFIG = {
   miroBoard: "https://miro.com/app/board/uXjVHjdNbo4=/",
 
   // Ссылка на Zoom для живого урока (четверг). Оставьте пустой, если присылаете в чат.
-  zoomLink: "",
+  zoomLink: "https://us06web.zoom.us/j/85776686414",
 
   // Куда уходят ответы учениц.
   // 1) submitUrl — адрес веб-приложения Google Apps Script (см. apps-script/Code.gs).
