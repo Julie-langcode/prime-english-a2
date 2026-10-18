@@ -13,8 +13,9 @@ window.PE_CONFIG = {
   zoomLink: "",
 
   // Куда уходят ответы учениц.
-  // 1) submitUrl — адрес приёма формы (Formspree, Google Apps Script и т. п.).
-  //    Если указан, ответы отправляются автоматически (POST, JSON).
+  // 1) submitUrl — адрес веб-приложения Google Apps Script (см. apps-script/Code.gs).
+  //    Ответы попадают в таблицу «Lesson Activity_Prime English A2», лист «Ответы»:
+  //    https://docs.google.com/spreadsheets/d/1PS6VvWCw6zUpjoV2lSkw-cdihJMEnAyp_Za0l6qBlNM/edit
   // 2) telegramUsername — ник преподавателя в Telegram без @.
   //    Если submitUrl пустой, кнопка «Отправить» открывает Telegram с готовым текстом.
   // 3) teacherEmail — запасной вариант: письмо с ответами.

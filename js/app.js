@@ -4,12 +4,12 @@
   const CFG = window.PE_CONFIG || {};
   const WEEKS = window.PE_WEEKS || {};
   const main = document.getElementById("main");
-  const STUDENTS = ["Tatiana", "Faina", "Alsu"];
+  const STUDENTS = ["Tatiana", "Faina"];
 
   // Модуль 1 · 8 недель. Открыта только текущая.
   const JOURNEY = [
     { n: 1, title: "Hello, World!", note: "Знакомство и работа", state: "done" },
-    { n: 2, title: "Touchdown", note: "Аэропорт и граница", state: "done" },
+    { n: 2, title: "Touchdown", note: "Аэропорт и граница", state: "done", open: true },
     { n: 3, title: "Home Hunt", note: "Ищем квартиру", state: "now" },
     { n: 4, title: "Скоро", note: "", state: "locked" },
     { n: 5, title: "Скоро", note: "", state: "locked" },
@@ -61,14 +61,14 @@
   const student = () => store.get("student", "");
 
   // ───────── progress
-  const autoTypes = new Set(["match", "choice", "tf", "builder", "gap"]);
+  const autoTypes = new Set(["match", "choice", "tf", "builder", "gap", "order"]);
   function blockDone(b) {
     const a = answers[b.id] || {};
     switch (b.type) {
       case "write": return words(a.text) >= Math.min(b.minWords || 1, 3);
       case "voice": return !!a.recorded;
       case "checklist": return Object.values(a.checks || {}).some(Boolean);
-      case "match": case "choice": case "tf": case "builder": case "gap": return !!a.checked;
+      case "match": case "choice": case "tf": case "builder": case "gap": case "order": return !!a.checked;
       default: return null; // не учитывается
     }
   }
@@ -86,6 +86,7 @@
     if (!student() && parts[0]) return renderHome();
     if (parts[0] === "week" && WEEKS[parts[1]]) {
       const w = WEEKS[parts[1]];
+      if (parts[2] === "vocab" && w.vocab) return renderVocab(w);
       if (parts[2]) {
         const d = w.days.find((x) => x.slug === parts[2]);
         if (d) return renderDay(w, d);
@@ -119,9 +120,6 @@
           <div class="names">
             ${STUDENTS.map((s) => `<button type="button" class="chip ${s === name ? "on" : ""}" data-name="${s}">${s}</button>`).join("")}
           </div>
-          <label class="other">Другое имя
-            <input type="text" id="otherName" placeholder="Ваше имя" value="${name && !STUDENTS.includes(name) ? esc(name) : ""}">
-          </label>
         </aside>
 
         <section class="howto">
@@ -139,10 +137,10 @@
           <h2 class="section-title">Ваш маршрут · 8 недель</h2>
           <div class="weeks">
             ${JOURNEY.map((j) => {
-              const open = j.state === "now";
+              const open = (j.state === "now" || j.open) && WEEKS[j.n];
               const tag = j.state === "done" ? "Пройдено" : j.state === "now" ? "Сейчас" : "Скоро";
               const inner = `<span class="wk-n">W${j.n}</span><span class="wk-t">${esc(j.title)}</span><span class="wk-note">${esc(j.note)}</span><span class="wk-tag">${tag}</span>`;
-              return open ? `<a class="wk now" href="#/week/${j.n}">${inner}</a>` : `<div class="wk ${j.state}" aria-disabled="true">${inner}</div>`;
+              return open ? `<a class="wk ${j.state} link" href="#/week/${j.n}">${inner}</a>` : `<div class="wk ${j.state}" aria-disabled="true">${inner}</div>`;
             }).join("")}
           </div>
         </section>
@@ -151,14 +149,10 @@
 
     const pick = (n) => {
       store.set("student", n);
-      paintWho();
       toast(`Отлично, ${n}! Открываю неделю`);
       setTimeout(() => (location.hash = "#/week/3"), 500);
     };
     el.querySelectorAll("[data-name]").forEach((b) => b.addEventListener("click", () => pick(b.dataset.name)));
-    const other = el.querySelector("#otherName");
-    other.addEventListener("keydown", (e) => { if (e.key === "Enter" && other.value.trim()) pick(other.value.trim()); });
-    other.addEventListener("change", () => { if (other.value.trim()) pick(other.value.trim()); });
   }
 
   // ───────── WEEK
@@ -175,9 +169,9 @@
             <p class="story">${esc(w.story)}</p>
           </div>
           <div class="pass-stub">
-            <div><span>From</span><b>Hotel</b></div>
+            <div><span>From</span><b>${esc(w.from || "")}</b></div>
             <div class="plane" aria-hidden="true">✈</div>
-            <div><span>To</span><b>New home</b></div>
+            <div><span>To</span><b>${esc(w.to || "")}</b></div>
             <a class="btn light" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Доска Miro ↗</a>
           </div>
         </div>
@@ -195,6 +189,10 @@
             </a>`;
           }).join("")}
         </div>
+
+        ${w.vocab ? `<a class="vocab-card" href="#/week/${w.id}/vocab">
+          <span><span class="eyebrow">Словарь недели</span><b>${w.vocab.reduce((s, g) => s + g.items.length, 0)} слов и фраз</b><span class="muted">${w.vocab.map((g) => esc(g.group.replace(/^⭐\s*/, ""))).join(" · ")}</span></span>
+          <span class="vc-go">Учить слова →</span></a>` : ""}
 
         <div class="two">
           <section class="card">
@@ -215,6 +213,7 @@
     main.innerHTML = "";
     const idx = w.days.indexOf(d);
     const prev = w.days[idx - 1], next = w.days[idx + 1];
+    const hasWork = d.blocks.some((b) => ["write", "voice", "choice", "gap", "match", "tf", "builder", "order", "checklist"].includes(b.type));
     const el = h(`
       <section class="dayview">
         <a class="back" href="#/week/${w.id}">← ${esc(w.code)} · ${esc(w.title)}</a>
@@ -228,10 +227,10 @@
             <div><dt>Формат</dt><dd>${esc(d.where)}</dd></div>
             ${d.deadline ? `<div><dt>Срок</dt><dd>${esc(d.deadline)}</dd></div>` : ""}
           </dl>
-          ${d.live ? "" : `<div class="progress"><span class="bar"><i id="dayBar"></i></span><span id="dayPct"></span></div>`}
+          ${hasWork ? `<div class="progress"><span class="bar"><i id="dayBar"></i></span><span id="dayPct"></span></div>` : ""}
         </header>
         <div class="blocks"></div>
-        ${d.live ? "" : sendPanelHtml()}
+        ${hasWork ? sendPanelHtml() : ""}
         <nav class="pager">
           ${prev ? `<a href="#/week/${w.id}/${prev.slug}">← ${prev.day} · ${esc(prev.label)}</a>` : "<span></span>"}
           ${next ? `<a href="#/week/${w.id}/${next.slug}">${next.day} · ${esc(next.label)} →</a>` : `<a href="#/week/${w.id}">К плану недели →</a>`}
@@ -240,7 +239,8 @@
     main.appendChild(el);
 
     const wrap = el.querySelector(".blocks");
-    d.blocks.forEach((b, i) => wrap.appendChild(renderBlock(b, i + 1, w, d)));
+    let k = 0;
+    d.blocks.forEach((b) => wrap.appendChild(renderBlock(b, b.type === "heading" ? 0 : ++k, w, d)));
 
     const refresh = () => {
       const bar = el.querySelector("#dayBar"); if (!bar) return;
@@ -249,7 +249,7 @@
     };
     refresh();
     el.addEventListener("pe-change", refresh);
-    if (!d.live) wireSend(el, w, d);
+    if (hasWork) wireSend(el, w, d);
   }
 
   const changed = (node) => { save(); node.dispatchEvent(new CustomEvent("pe-change", { bubbles: true })); };
@@ -259,7 +259,7 @@
       <article class="block card" id="${b.id}">
         <header class="block-head">
           <span class="num">${String(n).padStart(2, "0")}</span>
-          <div><h2>${esc(b.title)}</h2>${b.task ? `<p class="task">${esc(b.task)}</p>` : ""}</div>
+          <div>${b.source ? `<p class="src">📘 ${esc(b.source)}</p>` : ""}<h2>${esc(b.title)}</h2>${b.task ? `<p class="task">${esc(b.task)}</p>` : ""}</div>
         </header>
         <div class="block-body">${inner}</div>
       </article>`);
@@ -270,8 +270,102 @@
   }
 
   function renderBlock(b, n, w, d) {
-    const r = { vocab, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
+    if (b.type === "heading") return h(`<h2 class="blocks-heading">${esc(b.title)}</h2>`);
+    const r = { vocab, vocabref, order, listen, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
     return r ? r(b, n, w, d) : shell(b, n, "");
+  }
+
+  // ───────── словарь недели (отдельная страница)
+  function vocabList(items) {
+    return `<ul class="vocab">${items.map(([en, ru, ex, star]) => `
+      <li class="${star ? "star" : ""}"><button type="button" class="say" data-say="${esc(en)}" aria-label="Послушать ${esc(en)}">▶</button>
+        <div><b>${star ? "⭐ " : ""}${esc(en)}</b><span class="ru">${esc(ru)}</span>${ex ? `<i>${esc(ex)}</i>` : ""}</div></li>`).join("")}
+    </ul>`;
+  }
+  function bindSay(el) { el.querySelectorAll("[data-say]").forEach((x) => x.addEventListener("click", () => speak(x.dataset.say))); }
+
+  function vocabref(b, n, w) {
+    const groups = (b.groups || []).map((i) => w.vocab[i]).filter(Boolean);
+    const el = shell(b, n, `
+      ${groups.map((g) => `<h3 class="vgroup">${esc(g.group)}</h3>${vocabList(g.items)}`).join("")}
+      <a class="btn small ghost vlink" href="#/week/${w.id}/vocab">Весь словарь недели и тренажёр →</a>`);
+    bindSay(el);
+    return el;
+  }
+
+  function renderVocab(w) {
+    main.innerHTML = "";
+    const all = w.vocab.flatMap((g) => g.items);
+    const quiz = w.vocabQuiz || {
+      match: shuffle(all.filter((x) => !x[3]), hash(w.code)).slice(0, 8).map(([en, ru]) => [en, ru]),
+    };
+    const el = h(`
+      <section class="dayview">
+        <a class="back" href="#/week/${w.id}">← ${esc(w.code)} · ${esc(w.title)}</a>
+        <header class="day-head">
+          <div>
+            <p class="eyebrow">Vocabulary · ${esc(w.code)}</p>
+            <h1>Словарь недели</h1>
+            <p class="goal">${all.length} слов и фраз по теме «${esc(w.subtitle)}». Нажимайте ▶, чтобы послушать, и проверьте себя тренажёром внизу.</p>
+          </div>
+          <div class="vtools">
+            <button type="button" class="btn small ghost" id="hideRu">Скрыть перевод</button>
+          </div>
+        </header>
+        <div class="blocks">
+          ${w.vocab.map((g) => `<article class="card block"><h2 class="vtitle">${esc(g.group)}</h2>${vocabList(g.items)}</article>`).join("")}
+        </div>
+        <h2 class="section-title">Тренажёр</h2>
+        <div class="blocks" id="vq"></div>
+      </section>`);
+    main.appendChild(el);
+    bindSay(el);
+    el.querySelector("#hideRu").addEventListener("click", (e) => {
+      const on = el.classList.toggle("hide-ru");
+      e.target.textContent = on ? "Показать перевод" : "Скрыть перевод";
+    });
+    const vq = el.querySelector("#vq");
+    vq.appendChild(match({ id: `${w.code}-vq-match`, title: "Слово ↔ значение", task: "Соедините слово и значение.", pairs: quiz.match }, 1));
+    if (quiz.spell) vq.appendChild(gap({ id: `${w.code}-vq-spell`, title: "Напишите слово", task: "Вспомните слово по-английски.", items: quiz.spell }, 2));
+  }
+
+  // order — расставить по порядку
+  function order(b, n) {
+    const a = ans(b.id);
+    if (!a.seq || a.seq.length !== b.items.length) a.seq = shuffle(b.items.map((_, i) => i), hash(b.id));
+    const el = shell(b, n, `<ol class="order"></ol>${checkBar(b)}`);
+    const list = el.querySelector(".order");
+    const draw = (show) => {
+      list.innerHTML = a.seq.map((k, pos) => `
+        <li class="${show ? (k === pos ? "ok" : "no") : ""}"><span>${esc(b.items[k])}</span>
+          <span class="ord-btns"><button type="button" class="mv" data-pos="${pos}" data-d="-1" aria-label="Выше" ${pos === 0 ? "disabled" : ""}>↑</button><button type="button" class="mv" data-pos="${pos}" data-d="1" aria-label="Ниже" ${pos === a.seq.length - 1 ? "disabled" : ""}>↓</button></span></li>`).join("");
+      list.querySelectorAll(".mv").forEach((m) => m.addEventListener("click", () => {
+        const p = +m.dataset.pos, q = p + +m.dataset.d;
+        [a.seq[p], a.seq[q]] = [a.seq[q], a.seq[p]]; a.checked = false;
+        el.querySelector(".score").textContent = ""; draw(false); changed(el);
+      }));
+      return a.seq.filter((k, pos) => k === pos).length;
+    };
+    const check = () => { const ok = draw(true); a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
+    el.querySelector("[data-check]").addEventListener("click", check);
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(order(b, n)); save(); });
+    draw(false); if (a.checked) check();
+    return el;
+  }
+
+  // listen — озвученный текст
+  function listen(b, n) {
+    const el = shell(b, n, `
+      <div class="listen">
+        <button type="button" class="btn primary small" data-all>▶ Слушать всё</button>
+        ${b.hideText ? `<button type="button" class="btn ghost small" data-show>Показать текст</button>` : ""}
+      </div>
+      <ol class="lines ${b.hideText ? "hidden" : ""}">${b.lines.map((l) => `<li><button type="button" class="say" data-say="${esc(l)}" aria-label="Послушать">▶</button><span>${esc(l)}</span></li>`).join("")}</ol>`);
+    bindSay(el);
+    el.querySelector("[data-all]").addEventListener("click", () => speak(b.lines.join(" ")));
+    const sh = el.querySelector("[data-show]");
+    if (sh) sh.addEventListener("click", () => { el.querySelector(".lines").classList.toggle("hidden"); sh.textContent = sh.textContent.includes("Показать") ? "Скрыть текст" : "Показать текст"; });
+    return el;
   }
 
   // vocab — карточки со звуком
@@ -318,6 +412,7 @@
     const a = ans(b.id); a.sel = a.sel || {};
     const el = shell(b, n, `
       ${b.map ? streetMap() : ""}
+      ${b.listen ? `<div class="listen"><button type="button" class="btn small ghost" data-dialog>▶ Послушать диалог</button></div>` : ""}
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
       <ol class="choice">${b.items.map(([q, opts], i) => `
         <li data-i="${i}"><p>${esc(q).replace("___", '<span class="slot">___</span>')}</p>
@@ -327,7 +422,8 @@
       let ok = 0;
       el.querySelectorAll("li[data-i]").forEach((li) => {
         const i = +li.dataset.i, item = b.items[i], s = a.sel[i];
-        li.querySelector(".slot").textContent = s !== undefined ? item[1][s] : "___";
+        const slot = li.querySelector(".slot");
+        if (slot) slot.textContent = s !== undefined ? item[1][s] : "___";
         li.querySelectorAll(".opt").forEach((o) => {
           const j = +o.dataset.j;
           o.classList.toggle("on", s === j);
@@ -339,6 +435,8 @@
       });
       return ok;
     };
+    const dl = el.querySelector("[data-dialog]");
+    if (dl) dl.addEventListener("click", () => speak(b.listen.map((l) => l.replace(/^\w+:\s*/, "")).join(" ")));
     el.querySelectorAll(".opt").forEach((o) => o.addEventListener("click", () => {
       a.sel[+o.closest("li").dataset.i] = +o.dataset.j; a.checked = false;
       el.querySelector(".score").textContent = ""; paint(false); changed(el);
@@ -388,13 +486,13 @@
     const el = shell(b, n, `<ol class="builder">${b.items.map((s, i) => `
       <li data-i="${i}"><div class="built" aria-live="polite"></div><div class="pool"></div><span class="mark"></span></li>`).join("")}
       </ol>${checkBar(b)}`);
-    const tokens = (s) => s.replace(/\?$/, "").split(" ");
+    const tokens = (s) => s.split(" ");
     const draw = (li, show) => {
       const i = +li.dataset.i, target = tokens(b.items[i]);
       const built = a.built[i] || [];
       const pool = shuffle(target.map((t, k) => k), hash(b.id + i)).filter((k) => !built.includes(k));
       li.querySelector(".built").innerHTML = built.length
-        ? built.map((k, pos) => `<button type="button" class="tok in" data-pos="${pos}">${esc(target[k])}</button>`).join("") + "<span class='qm'>?</span>"
+        ? built.map((k, pos) => `<button type="button" class="tok in" data-pos="${pos}">${esc(target[k])}</button>`).join("")
         : `<span class="ph">Нажимайте на слова ниже…</span>`;
       li.querySelector(".pool").innerHTML = pool.map((k) => `<button type="button" class="tok" data-k="${k}">${esc(target[k])}</button>`).join("");
       const sentence = built.map((k) => target[k]).join(" ");
@@ -406,7 +504,7 @@
       return right;
     };
     const all = (show) => [...el.querySelectorAll("li[data-i]")].map((li) => draw(li, show)).filter(Boolean).length;
-    const check = () => { const ok = all(true); a.checked = true; a.score = `${ok}/${b.items.length}`; a.text = b.items.map((s, i) => (a.built[i] || []).map((k) => tokens(s)[k]).join(" ") + "?"); el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
+    const check = () => { const ok = all(true); a.checked = true; a.score = `${ok}/${b.items.length}`; a.text = b.items.map((s, i) => (a.built[i] || []).map((k) => tokens(s)[k]).join(" ")); el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
     el.querySelector("[data-check]").addEventListener("click", check);
     el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(builder(b, n)); save(); });
     all(false); if (a.checked) check();
@@ -416,7 +514,10 @@
   // gap — вписать форму глагола
   function gap(b, n) {
     const a = ans(b.id); a.val = a.val || {};
-    const el = shell(b, n, `<ol class="gap">${b.items.map(([q], i) => {
+    const extra =
+      (b.diary ? `<table class="mini"><caption>Anna's diary</caption><tbody>${b.diary.map(([d, t]) => `<tr><th>${esc(d)}</th><td>${esc(t)}</td></tr>`).join("")}</tbody></table>` : "") +
+      (b.board ? `<div class="board"><p>${esc(b.board.title)}</p><table><thead><tr>${b.board.head.map((x) => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${b.board.rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : "");
+    const el = shell(b, n, `${extra}<ol class="gap">${b.items.map(([q], i) => {
       const [pre, post] = q.split("___");
       return `<li data-i="${i}"><p>${esc(pre)}<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(a.val[i] || "")}" aria-label="Ответ ${i + 1}">${esc(post || "")}</p><span class="mark"></span></li>`;
     }).join("")}</ol>${checkBar(b)}`);
@@ -444,7 +545,8 @@
       ${b.prompt ? `<p class="prompt">${esc(b.prompt)}</p>` : ""}
       ${b.example ? `<details class="example"><summary>Показать образец</summary><pre>${esc(b.example)}</pre></details>` : ""}
       <textarea rows="${b.big ? 9 : 4}" placeholder="Write in English…">${esc(a.text || "")}</textarea>
-      <div class="wc"><span class="count"></span><span class="tag">Проверит ${esc(CFG.teacherName || "преподаватель")}</span></div>`);
+      <div class="wc"><span class="count"></span><span class="tag">Проверит ${esc(CFG.teacherName || "преподаватель")}</span></div>
+      ${b.key ? `<details class="example keybox"><summary>Ключ (откройте после выполнения)</summary><pre>${esc(b.key)}</pre></details>` : ""}`);
     const ta = el.querySelector("textarea"), cnt = el.querySelector(".count");
     const upd = () => { const c = words(ta.value); cnt.textContent = `${c} ${c === 1 ? "слово" : "слов"}${b.minWords ? ` · цель ${b.minWords}+` : ""}`; cnt.classList.toggle("ok", c >= (b.minWords || 1)); };
     ta.addEventListener("input", () => { a.text = ta.value; upd(); changed(el); });
@@ -505,6 +607,13 @@
 
   // info — объявление о квартире
   function info(b, n) {
+    if (b.message) {
+      const el = shell(b, n, `
+        <div class="msg"><p class="msg-from">${esc(b.message.from)}</p><p class="bubble">${esc(b.message.text)}</p>
+        <button type="button" class="btn small ghost" data-msg>▶ Послушать</button></div>`);
+      el.querySelector("[data-msg]").addEventListener("click", () => speak(b.message.text));
+      return el;
+    }
     const ad = b.advert;
     return shell(b, n, `
       <figure class="advert">
@@ -594,23 +703,38 @@
       </section>`;
   }
 
+  const TYPE_RU = { match: "сопоставление", choice: "выбор", tf: "true/false", builder: "сборка фраз", gap: "пропуски", order: "порядок", write: "письменно", voice: "голос", checklist: "чек-лист" };
+
+  // Строки для таблицы: одна строка = одно задание
+  function rowsFor(w, d) {
+    const rows = [];
+    let n = 0;
+    d.blocks.forEach((b) => {
+      if (b.type === "heading") return;
+      n++;
+      if (!TYPE_RU[b.type]) return;
+      const a = answers[b.id] || {};
+      let answer = "";
+      switch (b.type) {
+        case "choice": answer = b.items.map((it, k) => `${k + 1}) ${a.sel && a.sel[k] !== undefined ? it[1][a.sel[k]] + (a.sel[k] === it[2] ? " ✓" : " ✗") : "—"}`).join("\n"); break;
+        case "tf": answer = b.items.map((it, k) => `${k + 1}) ${a.sel && a.sel[k] !== undefined ? (a.sel[k] ? "True" : "False") + (a.sel[k] === it[1] ? " ✓" : " ✗") : "—"}`).join("\n"); break;
+        case "match": answer = b.pairs.map((p, k) => `${p[0]} → ${(a.sel && a.sel[k]) || "—"}${a.sel && a.sel[k] === p[1] ? " ✓" : a.sel && a.sel[k] ? " ✗" : ""}`).join("\n"); break;
+        case "gap": answer = b.items.map((it, k) => { const v = (a.val && a.val[k]) || ""; const ok = it[1].some((x) => norm(x) === norm(v)); return `${k + 1}) ${v || "—"}${v ? (ok ? " ✓" : " ✗") : ""}`; }).join("\n"); break;
+        case "builder": answer = (a.text || []).map((t, k) => `${k + 1}) ${t || "—"}`).join("\n"); break;
+        case "order": answer = (a.seq || []).map((k, pos) => `${pos + 1}) ${b.items[k]}${k === pos ? " ✓" : " ✗"}`).join("\n"); break;
+        case "write": answer = (a.text || "").trim() || "— пусто —"; break;
+        case "voice": answer = a.recorded ? "голосовое записано, отправлено отдельно" : "нет записи"; break;
+        case "checklist": { const items = b.fromCanDo ? w.canDo : b.items; answer = items.map((it, k) => `${a.checks && a.checks[k] ? "✅" : "▫️"} ${it}`).join("\n"); break; }
+      }
+      rows.push({ n, task: `${n}. ${b.title}`, type: TYPE_RU[b.type], answer, score: autoTypes.has(b.type) || b.type === "order" ? (a.checked ? a.score : "не проверено") : "" });
+    });
+    return rows;
+  }
+
   function report(w, d, note) {
     const lines = [`Prime English A2 · ${w.code} ${w.title} · ${d.day} ${d.date} · ${d.label}`, `Ученица: ${student() || "—"}`, ""];
-    d.blocks.forEach((b, i) => {
-      const a = answers[b.id] || {};
-      const head = `${i + 1}. ${b.title}`;
-      if (autoTypes.has(b.type)) lines.push(`${head} — ${a.checked ? a.score : "не проверено"}`);
-      if (b.type === "builder" && a.text) a.text.forEach((t) => lines.push(`   • ${t}`));
-      if (b.type === "gap" && a.val) b.items.forEach((_, k) => a.val[k] && lines.push(`   ${k + 1}) ${a.val[k]}`));
-      if (b.type === "write") lines.push(`${head}:`, a.text ? a.text.trim() : "— пусто —");
-      if (b.type === "voice") lines.push(`${head} — ${a.recorded ? "голосовое отправлено отдельно" : "нет записи"}`);
-      if (b.type === "checklist") {
-        const items = a.items || b.items || [];
-        lines.push(`${head}:`); items.forEach((it, k) => lines.push(`   ${a.checks && a.checks[k] ? "✅" : "▫️"} ${it}`));
-      }
-      if (b.type === "write" || b.type === "checklist") lines.push("");
-    });
-    if (note) lines.push("", `Комментарий: ${note}`);
+    rowsFor(w, d).forEach((r) => lines.push(`${r.task}${r.score ? " — " + r.score : ""}`, r.answer, ""));
+    if (note) lines.push(`Комментарий: ${note}`);
     return lines.join("\n");
   }
 
@@ -632,15 +756,22 @@
       const text = report(w, d, note());
       const mark = () => { const t = new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); store.set(key, t); stamp.textContent = `Последняя отправка: ${t}`; };
       if (CFG.submitUrl) {
+        const btn = el.querySelector("#sendBtn"); btn.disabled = true; btn.textContent = "Отправляю…";
         try {
-          const res = await fetch(CFG.submitUrl, {
+          // Google Apps Script принимает простой POST (text/plain) — без CORS-ограничений
+          await fetch(CFG.submitUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json" },
-            body: JSON.stringify({ student: student(), week: w.code, day: `${d.day} ${d.date} ${d.label}`, message: text, answers: Object.fromEntries(d.blocks.map((b) => [b.id, answers[b.id] || {}])) }),
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ student: student(), week: `${w.code} · ${w.title}`, day: `${d.day} ${d.date} · ${d.label}`, comment: note(), rows: rowsFor(w, d) }),
           });
-          if (!res.ok) throw new Error(res.status);
-          mark(); return toast("Отправлено! ✨ Спасибо");
-        } catch { toast("Не получилось отправить — открываю запасной способ"); }
+          mark(); btn.disabled = false; btn.textContent = "Отправить ещё раз";
+          return toast("Отправлено! ✨ Ответы уже в таблице преподавателя");
+        } catch {
+          btn.disabled = false; btn.textContent = "Отправить на проверку";
+          toast("Нет связи — попробуйте ещё раз или скопируйте ответы");
+          return;
+        }
       }
       if (CFG.telegramUsername) {
         try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
@@ -657,13 +788,6 @@
   }
 
   // ───────── шапка
-  function paintWho() {
-    const n = student();
-    const b = document.getElementById("whoBtn");
-    b.textContent = n ? n : "Войти";
-    b.title = n ? "Сменить имя" : "Выбрать имя";
-  }
-  document.getElementById("whoBtn").addEventListener("click", () => { location.hash = "#/"; });
   document.getElementById("miroTop").href = CFG.miroBoard || "#";
   document.getElementById("footTeacher").textContent = `преподаватель ${CFG.teacherName || ""}`;
 
@@ -673,7 +797,6 @@
     if (t) speak(t.closest(".advert").querySelector(".ad-text").textContent);
   });
 
-  paintWho();
   window.addEventListener("hashchange", route);
   route();
 })();
