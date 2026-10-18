@@ -19,7 +19,7 @@ window.PE_CONFIG = {
   // 2) telegramUsername — ник преподавателя в Telegram без @.
   //    Если submitUrl пустой, кнопка «Отправить» открывает Telegram с готовым текстом.
   // 3) teacherEmail — запасной вариант: письмо с ответами.
-  submitUrl: "",
+  submitUrl: "https://script.google.com/macros/s/AKfycbx1q21er15khBAn-o56mu07We0kUNlWNc6kTLynGKism-w2Yv0prWKmxE-3ri9fwQs/exec",
   telegramUsername: "",
   teacherEmail: "",
 };
