@@ -4,13 +4,15 @@
  * Как подключить (один раз, 3 минуты):
  * 1. Откройте таблицу «Lesson Activity_Prime English A2».
  * 2. Расширения → Apps Script. Удалите всё в Code.gs и вставьте этот файл.
- * 3. Сохраните. Нажмите «Начать развертывание» → «Новое развертывание».
+ * 3. Сохраните. Выберите функцию test → ▶ Выполнить → разрешите доступ.
+ *    В таблице появится лист «Ответы» с тестовой строкой.
+ * 4. «Начать развертывание» → «Новое развертывание».
  *    Тип: «Веб-приложение». Запуск от имени: «Я». Доступ: «Все».
- * 4. Разрешите доступ к таблице (Google попросит подтвердить).
  * 5. Скопируйте URL веб-приложения (заканчивается на /exec)
  *    и вставьте его в js/config.js → submitUrl.
  */
 
+const SHEET_ID = "1PS6VvWCw6zUpjoV2lSkw-cdihJMEnAyp_Za0l6qBlNM"; // таблица «Lesson Activity_Prime English A2»
 const SHEET_NAME = "Ответы";
 const HEADERS = ["Дата и время", "Ученица", "Неделя", "День", "Задание", "Тип", "Ответ", "Результат", "Комментарий", "Проверено", "Обратная связь"];
 
@@ -53,8 +55,14 @@ function doGet() {
   return json_({ ok: true, message: "Prime English A2 · приём ответов работает" });
 }
 
+/** Запустите вручную в редакторе (▶ Выполнить → test): в таблице появится лист «Ответы» и тестовая строка. */
+function test() {
+  const fake = { postData: { contents: JSON.stringify({ student: "Тест", week: "W3", day: "проверка связи", comment: "можно удалить", rows: [{ task: "Тест", type: "проверка", answer: "Скрипт работает ✓", score: "" }] }) } };
+  Logger.log(doPost(fake).getContent());
+}
+
 function getSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME, 0);
   if (sheet.getLastRow() === 0) {

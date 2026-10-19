@@ -804,19 +804,20 @@
       const mark = () => { const t = new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); store.set(key, t); stamp.textContent = `Последняя отправка: ${t}`; };
       if (CFG.submitUrl) {
         const btn = el.querySelector("#sendBtn"); btn.disabled = true; btn.textContent = "Отправляю…";
+        const payload = JSON.stringify({ student: student(), week: `${w.code} · ${w.title}`, day: `${d.day} ${d.date} · ${d.label}`, comment: note(), rows: rowsFor(w, d) });
+        const done = (msg) => { mark(); btn.disabled = false; btn.textContent = "Отправить ещё раз"; toast(msg); };
         try {
-          // Google Apps Script принимает простой POST (text/plain) — без CORS-ограничений
-          await fetch(CFG.submitUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ student: student(), week: `${w.code} · ${w.title}`, day: `${d.day} ${d.date} · ${d.label}`, comment: note(), rows: rowsFor(w, d) }),
-          });
-          mark(); btn.disabled = false; btn.textContent = "Отправить ещё раз";
-          return toast("Отправлено! ✨ Ответы уже в таблице преподавателя");
-        } catch {
-          btn.disabled = false; btn.textContent = "Отправить на проверку";
-          toast("Нет связи — попробуйте ещё раз или скопируйте ответы");
+          // Простой POST (text/plain) — Apps Script отвечает JSON, и мы видим, что строки записались
+          const res = await fetch(CFG.submitUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: payload });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.ok) return done(`Отправлено! ✨ Записано заданий: ${data.rows}`);
+          throw new Error(data.error || "HTTP " + res.status);
+        } catch (err) {
+          console.warn("Отправка не подтверждена:", err);
+          try { await navigator.clipboard.writeText(report(w, d, note())); } catch { /* ignore */ }
+          btn.disabled = false; btn.textContent = "Отправить ещё раз";
+          stamp.textContent = "Не удалось отправить. Ответы скопированы — вставьте их в чат с преподавателем.";
+          toast("Не получилось отправить — ответы скопированы, вставьте их в чат 🙏");
           return;
         }
       }
