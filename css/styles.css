@@ -428,4 +428,14 @@ table.mini th { color: var(--rust); width: 56px; }
 .jump button:hover { border-color: var(--ink); }
 @media (max-width: 640px) { .jump { top: 57px; } }
 
+/* ── v4: resources */
+.res { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.res a { display: grid; gap: 6px; padding: 14px 16px; border-radius: 14px; background: var(--cream); border: 1.5px solid transparent; text-decoration: none; transition: border-color .15s, transform .15s; }
+.res a:hover { border-color: var(--rust); transform: translateY(-1px); }
+.res-top { display: flex; align-items: center; gap: 10px; }
+.res-top b { font-size: 16px; flex: 1; }
+.res-tag { flex: none; font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px; border-radius: 999px; background: var(--blush); color: var(--rust-dk); }
+.res-go { color: var(--rust); font-weight: 700; }
+.res-desc { font-size: 14px; color: var(--brown); }
+
 [hidden] { display: none !important; }

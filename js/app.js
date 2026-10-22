@@ -10,13 +10,15 @@
   const JOURNEY = [
     { n: 1, title: "Hello, World!", note: "Знакомство и работа", state: "done" },
     { n: 2, title: "Touchdown", note: "Аэропорт и граница", state: "done", open: true },
-    { n: 3, title: "Home Hunt", note: "Ищем квартиру", state: "now" },
-    { n: 4, title: "Скоро", note: "", state: "locked" },
+    { n: 3, title: "Home Hunt", note: "Ищем квартиру", state: "done", open: true },
+    { n: 4, title: "Review & Shadowing", note: "Повторение и shadowing", state: "now" },
     { n: 5, title: "Скоро", note: "", state: "locked" },
     { n: 6, title: "Скоро", note: "", state: "locked" },
     { n: 7, title: "Скоро", note: "", state: "locked" },
     { n: 8, title: "Скоро", note: "", state: "locked" },
   ];
+  const CURRENT = (JOURNEY.find((j) => j.state === "now" && WEEKS[j.n]) || { n: Math.max(...Object.keys(WEEKS).map(Number)) }).n;
+
 
   // ───────── storage (best effort)
   const store = {
@@ -112,7 +114,7 @@
   // ───────── HOME
   function renderHome() {
     const name = student();
-    const w = WEEKS[3];
+    const w = WEEKS[CURRENT];
     main.innerHTML = "";
     const el = h(`
       <section class="home">
@@ -121,7 +123,7 @@
           <h1>English for your <em>next chapter</em> abroad</h1>
           <p class="lead">Ваше учебное пространство: план недели, задания на каждый день и связь с преподавателем. Пять дней — одна история переезда.</p>
           <div class="hero-actions">
-            <a class="btn primary" href="#/week/3">Открыть Week 3 · ${esc(w.title)} →</a>
+            <a class="btn primary" href="#/week/${w.id}">Открыть ${esc(w.code.replace("W", "Week "))} · ${esc(w.title)} →</a>
             <a class="btn ghost" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Доска Miro ↗</a>
             ${CFG.zoomLink ? `<a class="btn zoom" href="${esc(CFG.zoomLink)}" target="_blank" rel="noopener">Zoom · Чт 10:00 ↗</a>` : ""}
           </div>
@@ -164,7 +166,7 @@
     const pick = (n) => {
       store.set("student", n);
       toast(`Отлично, ${n}! Открываю неделю`);
-      setTimeout(() => (location.hash = "#/week/3"), 500);
+      setTimeout(() => (location.hash = `#/week/${CURRENT}`), 500);
     };
     el.querySelectorAll("[data-name]").forEach((b) => b.addEventListener("click", () => pick(b.dataset.name)));
   }
@@ -292,7 +294,7 @@
 
   function renderBlock(b, n, w, d) {
     if (b.type === "heading") return h(`<h2 class="blocks-heading">${esc(b.title)}</h2>`);
-    const r = { vocab, vocabref, order, listen, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
+    const r = { vocab, vocabref, order, listen, links, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
     const el = r ? r(b, n, w, d) : shell(b, n, "");
     const rv = el.querySelector("[data-reveal]");
     if (rv) {
@@ -398,6 +400,12 @@
     el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
     draw(false); if (a.checked) check();
     return el;
+  }
+
+  // links — внешние ресурсы
+  function links(b, n) {
+    return shell(b, n, `<ul class="res">${b.items.map(([t, url, desc, tag]) => `
+      <li><a href="${esc(url)}" target="_blank" rel="noopener"><span class="res-top">${tag ? `<span class="res-tag">${esc(tag)}</span>` : ""}<b>${esc(t)}</b><span class="res-go">↗</span></span>${desc ? `<span class="res-desc">${esc(desc)}</span>` : ""}</a></li>`).join("")}</ul>`);
   }
 
   // listen — озвученный текст
@@ -837,6 +845,7 @@
 
   // ───────── шапка
   document.getElementById("miroTop").href = CFG.miroBoard || "#";
+  const navWeek = document.querySelector('[data-nav="week"]'); if (navWeek) navWeek.href = `#/week/${CURRENT}`;
   const zt = document.getElementById("zoomTop"); if (CFG.zoomLink) zt.href = CFG.zoomLink; else zt.remove();
   document.getElementById("footTeacher").textContent = `преподаватель ${CFG.teacherName || ""}`;
 
