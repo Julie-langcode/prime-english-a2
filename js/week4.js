@@ -50,6 +50,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── MON · Present Simple
       {
         slug: "mon",
+        step: "Привычки",
         day: "Пн",
         date: "26.10",
         label: "Simple Gym",
@@ -155,6 +156,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── TUE · Present Continuous
       {
         slug: "tue",
+        step: "Перемены",
         day: "Вт",
         date: "27.10",
         label: "Continuous Gym",
@@ -246,6 +248,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── WED · Shadowing
       {
         slug: "wed",
+        step: "Тень диктора",
         day: "Ср",
         date: "28.10",
         label: "Shadowing Day",
@@ -345,6 +348,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── THU · Live lesson
       {
         slug: "thu",
+        step: "Студия повторения",
         day: "Чт",
         date: "29.10",
         label: "Live Lesson",
@@ -387,6 +391,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── FRI · Mixed review
       {
         slug: "fri",
+        step: "Месяц в Лиссабоне",
         day: "Пт",
         date: "30.10",
         label: "Polish & Write",

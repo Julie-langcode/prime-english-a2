@@ -172,6 +172,18 @@
   }
 
   // ───────── WEEK
+  // ───────── шаги недели (вместо дней)
+  const stepNo = (w, d) => w.days.indexOf(d) + 1;
+  const stepName = (d) => d.step || d.label;
+  const stepTag = (w, d) => (d.live ? `${d.day} ${d.date}` : `Шаг ${stepNo(w, d)}`);
+  const stepLine = (w, d) => (d.live ? `Живая встреча · ${d.day} ${d.date} · ${stepName(d)}` : `Шаг ${stepNo(w, d)} · ${stepName(d)}`);
+  function pace(w, d) {
+    if (d.live) return `${d.day} ${d.date} · ${d.where.split("·").pop().trim()}`;
+    const live = w.days.findIndex((x) => x.live);
+    return live >= 0 && w.days.indexOf(d) < live ? "В своём темпе · лучше до живой встречи" : "В своём темпе · до воскресенья, 20:00";
+  }
+
+  // ───────── WEEK
   function renderWeek(w) {
     main.innerHTML = "";
     const el = h(`
@@ -192,12 +204,14 @@
           </div>
         </div>
 
-        <h2 class="section-title">План по дням</h2>
+        <h2 class="section-title">Маршрут недели</h2>
+        <p class="route-note">Шаги проходите в своём темпе, в любые удобные дни. Главное — сделать шаги до живой встречи, а остальное — до воскресенья.</p>
         <div class="days">
           ${w.days.map((d, i) => {
             const p = dayProgress(d);
             return `<a class="day ${d.live ? "live" : ""}" href="#/week/${w.id}/${d.slug}" style="--i:${i}">
-              <span class="day-top"><span class="day-d">${d.day}</span><span class="day-date">${d.date}</span></span>
+              <span class="day-top"><span class="day-date">${stepTag(w, d)}</span></span>
+              <span class="day-d">${esc(stepName(d))}</span>
               <span class="day-label">${esc(d.label)}</span>
               <span class="day-title">${esc(d.title)}</span>
               <span class="day-where">${esc(d.where)}</span>
@@ -212,7 +226,7 @@
 
         <div class="two">
           <section class="card">
-            <h2 class="card-title">К пятнице я смогу</h2>
+            <h2 class="card-title">К концу недели я смогу</h2>
             <ul class="cando">${w.canDo.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
           </section>
           <section class="card">
@@ -235,13 +249,13 @@
         <a class="back" href="#/week/${w.id}">← ${esc(w.code)} · ${esc(w.title)}</a>
         <header class="day-head ${d.live ? "live" : ""}">
           <div>
-            <p class="eyebrow">${d.day} ${d.date} · ${esc(d.label)}</p>
+            <p class="eyebrow">${esc(stepLine(w, d))} · ${esc(d.label)}</p>
             <h1>${esc(d.title)}</h1>
             <p class="goal"><b>Цель:</b> ${esc(d.goal)}</p>
           </div>
           <dl class="meta">
             <div><dt>Формат</dt><dd>${esc(d.where)}</dd></div>
-            ${d.deadline ? `<div><dt>Срок</dt><dd>${esc(d.deadline)}</dd></div>` : ""}
+            <div><dt>Когда</dt><dd>${esc(pace(w, d))}</dd></div>
           </dl>
           ${hasWork ? `<div class="progress"><span class="bar"><i id="dayBar"></i></span><span id="dayPct"></span></div>` : ""}
           ${nameBar()}
@@ -250,8 +264,8 @@
         <div class="blocks"></div>
         ${hasWork ? sendPanelHtml() : ""}
         <nav class="pager">
-          ${prev ? `<a href="#/week/${w.id}/${prev.slug}">← ${prev.day} · ${esc(prev.label)}</a>` : "<span></span>"}
-          ${next ? `<a href="#/week/${w.id}/${next.slug}">${next.day} · ${esc(next.label)} →</a>` : `<a href="#/week/${w.id}">К плану недели →</a>`}
+          ${prev ? `<a href="#/week/${w.id}/${prev.slug}">← ${esc(stepName(prev))}</a>` : "<span></span>"}
+          ${next ? `<a href="#/week/${w.id}/${next.slug}">${esc(stepName(next))} →</a>` : `<a href="#/week/${w.id}">К плану недели →</a>`}
         </nav>
       </section>`);
     main.appendChild(el);
@@ -797,7 +811,7 @@
   }
 
   function report(w, d, note) {
-    const lines = [`Prime English A2 · ${w.code} ${w.title} · ${d.day} ${d.date} · ${d.label}`, `Ученица: ${student() || "—"}`, ""];
+    const lines = [`Prime English A2 · ${w.code} ${w.title} · ${stepLine(w, d)} · ${d.label}`, `Ученица: ${student() || "—"}`, ""];
     rowsFor(w, d).forEach((r) => lines.push(`${r.task}${r.score ? " — " + r.score : ""}`, r.answer, ""));
     if (note) lines.push(`Комментарий: ${note}`);
     return lines.join("\n");
@@ -822,7 +836,7 @@
       const mark = () => { const t = new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); store.set(key, t); stamp.textContent = `Последняя отправка: ${t}`; };
       if (CFG.submitUrl) {
         const btn = el.querySelector("#sendBtn"); btn.disabled = true; btn.textContent = "Отправляю…";
-        const payload = JSON.stringify({ student: student(), week: `${w.code} · ${w.title}`, day: `${d.day} ${d.date} · ${d.label}`, comment: note(), rows: rowsFor(w, d) });
+        const payload = JSON.stringify({ student: student(), week: `${w.code} · ${w.title}`, day: `${stepLine(w, d)} · ${d.label}`, comment: note(), rows: rowsFor(w, d) });
         const done = (msg) => { mark(); btn.disabled = false; btn.textContent = "Отправить ещё раз"; toast(msg); };
         try {
           // Простой POST (text/plain) — Apps Script отвечает JSON, и мы видим, что строки записались
@@ -845,7 +859,7 @@
         mark(); return toast("Ответы скопированы — вставьте их в чат Telegram");
       }
       if (CFG.teacherEmail) {
-        location.href = `mailto:${CFG.teacherEmail}?subject=${encodeURIComponent(`${w.code} · ${d.day} · ${student()}`)}&body=${encodeURIComponent(text)}`;
+        location.href = `mailto:${CFG.teacherEmail}?subject=${encodeURIComponent(`${w.code} · ${stepName(d)} · ${student()}`)}&body=${encodeURIComponent(text)}`;
         mark(); return;
       }
       window.open(`https://t.me/share/url?url=${encodeURIComponent(" ")}&text=${encodeURIComponent(text)}`, "_blank", "noopener");

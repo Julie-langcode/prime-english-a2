@@ -26,7 +26,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       { t: "Вопросы Do / Does: Do I need…? Does it cost…?", s: "Повторение · MyGrammarLab · Unit 38 · стр. 92–93" },
       { t: "Просьбы: Can I…? / Could you…?", s: "Готовые фразы, без новой грамматики" },
       { t: "I'd like to… — вежливое желание", s: "Готовая фраза" },
-      { t: "Числа, деньги, даты, телефоны", s: "Navigator недели · вторник" },
+      { t: "Числа, деньги, даты, телефоны", s: "Шаг 2 · Первый визит" },
     ],
     vocab: [
       {
@@ -78,6 +78,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── MON · Words & reading
       {
         slug: "mon",
+        step: "Знакомство",
         day: "Пн",
         date: "16.11",
         label: "Money Words",
@@ -250,7 +251,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
             ],
           },
           {
-            type: "checklist", id: "w5-mon-check", title: "Перед вторником",
+            type: "checklist", id: "w5-mon-check", title: "Перед следующим шагом",
             task: "Отметьте, что сделали.",
             items: [
               "Я прослушала все слова и повторила вслух",
@@ -264,6 +265,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── TUE · Numbers & polite questions
       {
         slug: "tue",
+        step: "Первый визит",
         day: "Вт",
         date: "17.11",
         label: "Numbers & Requests",
@@ -361,6 +363,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── WED · Shadowing
       {
         slug: "wed",
+        step: "Тренировка голоса",
         day: "Ср",
         date: "18.11",
         label: "Shadowing Day",
@@ -383,7 +386,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
           },
           {
             type: "listen", id: "w5-wed-set2", title: "Set 2 · Opening an account",
-            task: "Сначала «Слушать всё», потом повторяйте по одной реплике. Это диалог из вторника.",
+            task: "Сначала «Слушать всё», потом повторяйте по одной реплике. Это диалог из шага «Первый визит».",
             lines: [
               "Good morning. How can I help you?",
               "Hello. I'd like to open an account, please.",
@@ -444,6 +447,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── THU · Live lesson
       {
         slug: "thu",
+        step: "Живая практика",
         day: "Чт",
         date: "19.11",
         label: "Live Lesson",
@@ -464,7 +468,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
               ["06", "Role-play 1", "Открываем счёт в отделении", 15],
               ["07", "Role-play 2", "Звонок: карта заблокирована + сюрпризы от банка", 15],
               ["08", "Mistake Wall", "Исправляем фразы урока вместе", 10],
-              ["09", "Next stop", "Can-do и задания на пятницу", 5],
+              ["09", "Next stop", "Can-do и шаг «Письмо и итоги»", 5],
             ],
           },
           { type: "heading", id: "w5-thu-before", title: "До урока · 10 минут" },
@@ -486,6 +490,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
       // ───────────────────────── FRI · Writing & review
       {
         slug: "fri",
+        step: "Письмо и итоги",
         day: "Пт",
         date: "20.11",
         label: "Write & Review",

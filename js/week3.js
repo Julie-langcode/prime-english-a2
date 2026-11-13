@@ -119,6 +119,7 @@ window.PE_WEEKS[3] = {
     // ───────────────────────── MON
     {
       slug: "mon",
+        step: "Знакомство",
       day: "Пн",
       date: "19.10",
       label: "Word Power",
@@ -222,6 +223,7 @@ window.PE_WEEKS[3] = {
     // ───────────────────────── TUE
     {
       slug: "tue",
+        step: "Осмотр по фото",
       day: "Вт",
       date: "20.10",
       label: "Grammar Gym",
@@ -354,6 +356,7 @@ window.PE_WEEKS[3] = {
     // ───────────────────────── WED
     {
       slug: "wed",
+        step: "Звонок агенту",
       day: "Ср",
       date: "21.10",
       label: "Voice Day",
@@ -414,6 +417,7 @@ window.PE_WEEKS[3] = {
     // ───────────────────────── THU
     {
       slug: "thu",
+        step: "Просмотр квартиры",
       day: "Чт",
       date: "22.10",
       label: "Live Lesson",
@@ -466,6 +470,7 @@ window.PE_WEEKS[3] = {
     // ───────────────────────── FRI
     {
       slug: "fri",
+        step: "Письмо агенту",
       day: "Пт",
       date: "23.10",
       label: "Polish & Write",
