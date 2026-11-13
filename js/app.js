@@ -11,11 +11,11 @@
     { n: 1, title: "Hello, World!", note: "Знакомство и работа", state: "done" },
     { n: 2, title: "Touchdown", note: "Аэропорт и граница", state: "done", open: true },
     { n: 3, title: "Home Hunt", note: "Ищем квартиру", state: "done", open: true },
-    { n: 4, title: "Review & Shadowing", note: "Повторение и shadowing", state: "now" },
-    { n: 5, title: "Скоро", note: "", state: "locked" },
-    { n: 6, title: "Скоро", note: "", state: "locked" },
-    { n: 7, title: "Скоро", note: "", state: "locked" },
-    { n: 8, title: "Скоро", note: "", state: "locked" },
+    { n: 4, title: "Review & Shadowing", note: "Повторение и shadowing", state: "done", open: true },
+    { n: 5, title: "Bank & Money", note: "Банк, карта, деньги", state: "now" },
+    { n: 6, title: "Health & Insurance", note: "Скоро", state: "locked" },
+    { n: 7, title: "New Job, New Team", note: "Скоро", state: "locked" },
+    { n: 8, title: "My Lisbon Life", note: "Скоро · проект", state: "locked" },
   ];
   const CURRENT = (JOURNEY.find((j) => j.state === "now" && WEEKS[j.n]) || { n: Math.max(...Object.keys(WEEKS).map(Number)) }).n;
 
