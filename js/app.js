@@ -294,7 +294,7 @@
 
   function renderBlock(b, n, w, d) {
     if (b.type === "heading") return h(`<h2 class="blocks-heading">${esc(b.title)}</h2>`);
-    const r = { vocab, vocabref, order, listen, links, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson }[b.type];
+    const r = { vocab, vocabref, order, listen, links, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson, video }[b.type];
     const el = r ? r(b, n, w, d) : shell(b, n, "");
     const rv = el.querySelector("[data-reveal]");
     if (rv) {
@@ -647,6 +647,16 @@
     });
     el.querySelector(".selfmark input").addEventListener("change", (e) => { a.recorded = e.target.checked; changed(el); });
     return el;
+  }
+
+  // video — YouTube (аутентичное видео)
+  function video(b, n) {
+    const id = encodeURIComponent(b.youtube);
+    return shell(b, n, `
+      <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" title="${esc(b.title)}" loading="lazy"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+      ${b.note ? `<p class="hint">${esc(b.note)}</p>` : ""}
+      <a class="btn small ghost" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Открыть на YouTube ↗</a>`);
   }
 
   // checklist

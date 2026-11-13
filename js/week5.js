@@ -82,9 +82,9 @@ window.PE_WEEKS = window.PE_WEEKS || {};
         date: "16.11",
         label: "Money Words",
         title: "Anna opens an account",
-        where: "Сайт · 30 минут",
+        where: "Сайт + видео · 50 минут",
         deadline: "до вторника, 10:00",
-        goal: "Выучить слова темы, понять SMS от банка и таблицу комиссий.",
+        goal: "Выучить слова темы, понять настоящее видео о банковском счёте, SMS от банка и таблицу комиссий.",
         blocks: [
           {
             type: "write", id: "w5-mon-warm", title: "Warm-up · You and your bank",
@@ -107,6 +107,104 @@ window.PE_WEEKS = window.PE_WEEKS || {};
               ["cash machine", "a machine where you take out money"],
             ],
           },
+
+          // ── Authentic video: Khan Academy · Opening a bank account (≈2.5 min)
+          { type: "heading", id: "w5-mon-video-h", title: "Real English · видео из жизни · 20 минут" },
+          {
+            type: "rule", id: "w5-mon-video-how", title: "Как смотреть настоящее видео",
+            task: "Это видео не для учеников: носитель говорит в обычном темпе. Понимать каждое слово не нужно — задания простые, и каждое просит найти что-то одно.",
+            table: {
+              head: ["", "Просмотр", "Что делаем"],
+              rows: [
+                ["1", "Gist", "Смотрим без субтитров и без паузы. Вопрос: о чём видео в целом?"],
+                ["2", "Order", "Смотрим ещё раз и ставим темы видео по порядку. Можно пауза."],
+                ["3", "Details", "Включаем субтитры (CC) и скорость 0.75 (⚙). Отвечаем True / False."],
+              ],
+            },
+            tips: [
+              "Не понимаете слово — пропускайте, смотрите на картинку и ищите знакомые: bank, account, fee, online.",
+              "Видео американское: <b>checking account</b> = наш current account, <b>ATM</b> = cash machine.",
+              "Перед просмотром сделайте два задания ниже — они настроят уши на тему.",
+            ],
+          },
+          {
+            type: "write", id: "w5-mon-video-predict", title: "Before you watch · Predict",
+            task: "Как вы думаете, что нужно, чтобы открыть счёт? Напишите 3 вещи по-английски. После видео проверите себя.",
+            example: "a passport\nproof of address\nsome money",
+            minWords: 4,
+          },
+          {
+            type: "match", id: "w5-mon-video-words", title: "Before you watch · Key words",
+            task: "Эти слова прозвучат в видео. Соедините слово и значение.",
+            pairs: [
+              ["interest", "extra money the bank pays you"],
+              ["checking account", "an account for everyday spending"],
+              ["savings account", "an account to keep money and get interest"],
+              ["branch", "a bank office in your town"],
+              ["minimum balance", "the smallest amount you must keep in the account"],
+              ["deposit", "money you put into your account"],
+              ["ID", "a document with your photo and name"],
+            ],
+          },
+          {
+            type: "video", id: "w5-mon-video", title: "Watch · Opening a bank account",
+            source: "Khan Academy · Sal Khan · ≈2,5 минуты · английский США",
+            youtube: "UtM1hDlP62o",
+            note: "Просмотр 1 — без субтитров. Просмотр 3 — включите CC и скорость 0.75 (⚙ в плеере).",
+          },
+          {
+            type: "choice", id: "w5-mon-video-gist", title: "Watch 1 · Gist",
+            task: "Первый просмотр без субтитров. Выберите ответ.",
+            items: [
+              ["The video is about…", ["how to choose and open a bank account", "how to get a loan", "how to send money abroad"], 0],
+              ["The speaker talks to people who…", ["work in a bank", "want to open an account", "want to buy a house"], 1],
+              ["The speaker's style is…", ["a dialogue in a bank", "one person explains, like a teacher", "a news report"], 1],
+            ],
+          },
+          {
+            type: "order", id: "w5-mon-video-order", title: "Watch 2 · Put the topics in order",
+            task: "Второй просмотр. В каком порядке говорит Сэл? Поставьте темы стрелками.",
+            items: [
+              "Choosing a bank: compare interest",
+              "Fees: what happens under the minimum balance",
+              "Convenience: ATMs, branches and online banking",
+              "Checking account or savings account?",
+              "Opening the account: in person or online",
+              "Documents and the first deposit",
+            ],
+          },
+          {
+            type: "tf", id: "w5-mon-video-tf", title: "Watch 3 · True or False?",
+            task: "Третий просмотр — с субтитрами и на скорости 0.75. Отметьте T или F.",
+            items: [
+              ["Higher interest is usually better for you.", true, ""],
+              ["If your balance is under the minimum, the bank can take a fee.", true, "A maintenance fee."],
+              ["Savings accounts usually pay less interest than checking accounts.", false, "Savings accounts usually pay more interest."],
+              ["A checking account is good for everyday spending.", true, ""],
+              ["You can open an account only in a branch.", false, "In person or online."],
+              ["You need ID and proof of address.", true, "And a Social Security number in the USA."],
+              ["The first deposit is always big — 500 dollars or more.", false, "It can be as small as 5 dollars."],
+            ],
+          },
+          {
+            type: "match", id: "w5-mon-video-usuk", title: "After you watch · USA → Europe",
+            task: "В видео американские слова. Найдите, как это называется в Европе и в Португалии.",
+            pairs: [
+              ["checking account", "current account"],
+              ["ATM", "cash machine"],
+              ["Social Security number", "NIF (tax number) in Portugal"],
+              ["driver's license", "driving licence"],
+              ["check", "cheque"],
+            ],
+          },
+          {
+            type: "write", id: "w5-mon-video-after", title: "After you watch · Me and my bank",
+            task: "4–5 предложений: 1) Что из вашего Predict было в видео? 2) Какой совет из видео полезен вам в Лиссабоне? 3) Вам нужен checking account, savings account или оба — почему?",
+            example: "In the video you need ID and proof of address — I wrote it too! The best tip for me: compare the fees. In Lisbon I need a current account for my salary. I think I need a savings account too, because I want to save money for a car.",
+            minWords: 30, big: true,
+          },
+
+          { type: "heading", id: "w5-mon-bank-h", title: "Anna's bank · чтение" },
           {
             type: "gap", id: "w5-mon-fees", title: "Banco Atlântico · fees",
             task: "Посмотрите на таблицу комиссий и ответьте числом (например, 4.50).",
