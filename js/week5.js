@@ -452,37 +452,309 @@ window.PE_WEEKS = window.PE_WEEKS || {};
         date: "19.11",
         label: "Live Lesson",
         title: "At the Bank · Role-play Studio",
-        where: "Zoom + Miro · 10:00–11:30",
+        where: "Zoom + сайт · 10:00–11:30",
         deadline: "до урока и после него",
         live: true,
         goal: "Уверенно провести два банковских разговора: открыть счёт в отделении и решить проблему с картой по телефону.",
         blocks: [
           {
-            type: "lesson", id: "w5-thu-map", title: "Карта урока",
+            type: "lesson", id: "w5-thu-map", title: "Карта урока", onPage: true,
             stages: [
-              ["01", "Check-in", "Cash or card? + shadowing звонка из шага 3", 7],
-              ["02", "Word Sort", "Слова недели по трём коробкам, на время", 7],
-              ["03", "Numbers Race", "Цифры на слух: суммы, даты, телефоны", 6],
-              ["04", "Info Gap", "Which bank for Anna? Спрашиваем и выбираем банк", 8],
-              ["05", "Open an account", "Ролевая игра в отделении + анкета", 7],
-              ["06", "Video", "Mr Bean у банкомата: смотрим, описываем, что происходит", 15],
-              ["07", "Grammar Clinic", "Вежливые вопросы и просьбы + колесо ситуаций", 10],
-              ["08", "Call the bank", "Звонок в банк: банкомат забрал карту + сюрпризы", 15],
-              ["09", "Mistake Wall", "Исправляем фразы урока, самооценка, следующий шаг", 10],
+              ["01", "Check-in", "Cash or card? + shadowing звонка", 7, "w5-s01"],
+              ["02", "Word Sort", "Слова недели по трём коробкам, на время", 7, "w5-s02"],
+              ["03", "Numbers Race", "Цифры на слух: суммы, даты, телефоны", 6, "w5-s03"],
+              ["04", "Info Gap", "Which bank for Anna? Спрашиваем и выбираем банк", 8, "w5-s04"],
+              ["05", "Open an account", "Ролевая игра в отделении + анкета", 7, "w5-s05"],
+              ["06", "Video", "Mr Bean у банкомата: смотрим и описываем", 15, "w5-s06"],
+              ["07", "Grammar Clinic", "Вежливые вопросы + колесо ситуаций", 10, "w5-s07"],
+              ["08", "Call the bank", "Звонок в банк: банкомат забрал карту", 15, "w5-s08"],
+              ["09", "Mistake Wall", "Ошибки урока, самооценка, следующий шаг", 10, "w5-s09"],
             ],
           },
-          { type: "heading", id: "w5-thu-before", title: "До урока · 10 минут" },
           {
-            type: "write", id: "w5-thu-prep", title: "My bank questions",
-            task: "Напишите 4 вопроса, которые вы реально зададите в банке после переезда. Они понадобятся в ролевой игре.",
+            type: "write", id: "w5-thu-prep", title: "До урока · My bank questions",
+            task: "Напишите 4 вопроса, которые вы реально зададите в банке после переезда. Они понадобятся в ролевых играх.",
             example: "What documents do I need?\nIs there a monthly fee?\nCan I use the app in English?\nHow long does it take to get a card?",
             minWords: 12,
           },
-          { type: "heading", id: "w5-thu-after", title: "После урока · 5 минут" },
+
+          // 01
+          { type: "heading", id: "w5-s01", stage: "01", title: "Check-in · Cash or card?", min: 7 },
           {
-            type: "write", id: "w5-thu-after-note", title: "My best sentence today",
-            task: "Запишите одну фразу с урока, которой вы гордитесь, и одну ошибку, которую больше не сделаете.",
+            type: "write", id: "w5-thu-checkin", title: "Check-in · About you",
+            task: "Выберите одно начало и закончите предложение о себе. Одна минута!",
+            prompt: "I usually pay by … / I take out money … / My bank app is …",
+            example: "I usually pay by card.\nI never take out money!",
+            minWords: 5,
+          },
+          {
+            type: "listen", id: "w5-thu-shadow", title: "Shadowing · The call",
+            task: "Раунд 1 — все вместе за диктором. Раунд 2 — Tatiana = Anna, Faina = Marta. Раунд 3 — меняемся ролями.",
+            lines: [
+              "Banco Atlântico, Marta speaking. How can I help?",
+              "Hello. I'm afraid my card is blocked.",
+              "I'm sorry to hear that. What's your name, please?",
+              "Anna Petrova. The card number ends in four five two one.",
+              "Thank you. Do you have your card with you?",
+              "Yes, I do. I got a message last night.",
+              "OK, I can unblock it now. Is there anything else?",
+              "No, that's all. Thank you very much!",
+            ],
+          },
+
+          // 02
+          { type: "heading", id: "w5-s02", stage: "02", title: "Word Sort", min: 7 },
+          {
+            type: "sort", id: "w5-thu-sort", title: "Bank Word Sort", timer: 180,
+            task: "Разложите 15 слов по коробкам за 3 минуты (запустите таймер ⏱). Потом скажите по одному предложению со словом из каждой коробки. Не согласны с проверкой? Объясните почему!",
+            bins: ["At the branch", "Cards & money", "Problems"],
+            items: [
+              ["passport", 0], ["proof of address", 0], ["form", 0], ["sign", 0], ["NIF", 0],
+              ["PIN", 1], ["cash machine", 1], ["transfer", 1], ["fee", 1], ["balance", 1], ["statement", 1], ["take out money", 1],
+              ["blocked", 2], ["lost", 2], ["stolen", 2],
+            ],
+          },
+
+          // 03
+          { type: "heading", id: "w5-s03", stage: "03", title: "Numbers Race", min: 6 },
+          {
+            type: "listen", id: "w5-thu-num-listen", title: "Round 1 · Listen",
+            task: "Текст скрыт. Julie читает (или нажмите «Слушать всё»), каждая фраза — дважды. Запишите цифры ниже.",
+            hideText: true,
+            lines: [
+              "The coffee machine costs twelve euros ninety-nine.",
+              "The transfer is three thousand four hundred euros.",
+              "Your appointment is on the fifteenth of December.",
+              "Call us on oh eight hundred, one two three, four five six.",
+              "The bank closes at a quarter to ten.",
+              "The new card costs thirteen euros, not thirty!",
+            ],
+          },
+          {
+            type: "gap", id: "w5-thu-num-write", title: "Round 1 · Write the numbers",
+            task: "Только цифры. Кто быстрее и точнее?",
+            items: [
+              ["The coffee machine costs € ___.", ["12.99", "12,99"]],
+              ["The transfer is € ___.", ["3400", "3,400", "3 400"]],
+              ["The appointment is on ___ December.", ["15", "15th"]],
+              ["The phone number is ___.", ["0800 123 456", "0800123456"]],
+              ["The bank closes at ___.", ["9:45", "9.45", "09:45"]],
+              ["The new card costs € ___.", ["13"]],
+            ],
+          },
+          {
+            type: "flip", id: "w5-thu-num-say", title: "Round 2 · Say it aloud",
+            task: "Прочитайте число вслух, потом нажмите на карточку — проверьте себя и послушайте.",
+            cards: [
+              ["€4.50", "four euros fifty"],
+              ["€1,250", "one thousand two hundred and fifty euros"],
+              ["21 Nov", "the twenty-first of November"],
+              ["8:30", "eight thirty / half past eight"],
+              ["21 345 67 89", "two one, three four five, six seven, eight nine"],
+              ["€15 or €50?", "fifTEEN or FIFty", "fifteen or fifty"],
+            ],
+          },
+
+          // 04
+          { type: "heading", id: "w5-s04", stage: "04", title: "Info Gap · Which bank for Anna?", min: 8 },
+          {
+            type: "infogap", id: "w5-thu-infogap", title: "Which bank for Anna?",
+            task: "У каждой своя карточка банка — не показывайте её! Спросите партнёршу о её банке, заполните поля, потом вместе выберите банк для Анны.",
+            fields: ["Documents", "Monthly fee", "New card in …", "App in English?", "Opening hours"],
+            questions: ["What documents do I need?", "Is there a monthly fee?", "How long does it take to get a card?", "Does the app work in English?", "What time does it open?"],
+            banks: {
+              Tatiana: {
+                name: "Banco Atlântico",
+                rows: ["passport, NIF, proof of address", "€4.50, free if your salary comes here", "5 days", "yes", "Mon–Fri, 8:30–15:00"],
+                keys: [["proof"], ["4"], ["5"], ["yes"], ["8"]],
+              },
+              Faina: {
+                name: "Banco Lusitano",
+                rows: ["passport, NIF, work contract", "free", "10 days", "no, Portuguese only", "Mon–Sat, 9:00–18:00"],
+                keys: [["contract"], ["free"], ["10"], ["no"], ["9"]],
+              },
+            },
+          },
+
+          // 05
+          { type: "heading", id: "w5-s05", stage: "05", title: "Open an account", min: 7 },
+          {
+            type: "cards", id: "w5-thu-roles1", title: "Role cards · In the branch", cols: 3,
+            task: "Идём в банк, который вы выбрали. Tatiana — клиент, Faina — сотрудник банка. Сотрудник заполняет анкету ниже.",
+            cards: [
+              ["Customer", "You are new in Lisbon.<br>Your salary comes on the 25th.<br>You want a debit card and the app.<br><br><b>Ask 3 questions:</b> documents, fee, how long?", "blush"],
+              ["Bank clerk", "Say hello: <i>How can I help you?</i><br>Ask for passport, NIF and proof of address.<br>Fee: €4.50, free with salary.<br>New card: 5 days.<br>Fill in the form. Ask the customer to sign.", "dark"],
+              ["Phrase bank", "<b>Customer</b><br><i>I'd like to open an account, please.<br>What documents do I need?<br>Is there a monthly fee?<br>How long does it take?</i><br><br><b>Clerk</b><br><i>Can I see your passport, please?<br>Please fill in this form.<br>Sign here, please.</i>", ""],
+            ],
+          },
+          {
+            type: "form", id: "w5-thu-form", title: "Account opening form",
+            task: "Заполняет «сотрудник банка» — по ответам клиента. Данные можно придумать.",
+            formTitle: "Banco Atlântico · Account opening form",
+            fields: ["Full name", "Date of birth", "NIF (tax number)", "Address in Lisbon", "Phone number", "Salary to this account? (yes / no)", "Card (debit card / no card)", "Signature"],
+          },
+
+          // 06
+          { type: "heading", id: "w5-s06", stage: "06", title: "Video · Mr Bean at the cash machine", min: 15 },
+          {
+            type: "write", id: "w5-thu-v-before", title: "Before · Predict",
+            task: "Что может пойти не так у банкомата? Две идеи.",
+            example: "The machine takes my card.\nI forget my PIN.",
+            minWords: 6,
+          },
+          {
+            type: "video", id: "w5-thu-video", title: "Watch · Mr Bean at the cash machine",
+            source: "Короткий клип почти без слов · смотрим 2 раза",
+            youtube: "ZtmJyMC6CDA", backup: "JOdoMfcAu5g",
+            note: "Если плеер не запускается — откройте видео кнопкой ниже и покажите через демонстрацию экрана со звуком.",
+          },
+          {
+            type: "write", id: "w5-thu-v-gist", title: "Watch 1 · Gist",
+            task: "Смотрим без пауз. Что за проблема у Mr Bean? Одно предложение.",
+            key: "Model: The cash machine takes his card, and he tries to get it back.",
+            minWords: 5,
+          },
+          {
+            type: "flip", id: "w5-thu-v-phrases", title: "Useful phrases", small: true,
+            task: "Фразы для описания видео. Нажмите — увидите пример в Present Continuous.",
+            cards: [
+              ["put in the card", "He's putting his card in."],
+              ["enter the PIN", "He's entering his PIN."],
+              ["press the button", "He's pressing the button."],
+              ["the machine takes the card", "The machine is taking his card."],
+              ["it's stuck", "His card is stuck in the machine."],
+              ["call the bank", "He's calling the bank."],
+            ],
+          },
+          {
+            type: "write", id: "w5-thu-v-pause", title: "Watch 2 · Pause & say",
+            task: "Julie ставит видео на паузу. Что происходит прямо сейчас? После каждой паузы — одно предложение (am / is / are + -ing).",
+            example: "He's putting his card in the machine.\nThe machine is taking his card.\nHe's trying to get it back.",
+            minWords: 12, big: true,
+          },
+          {
+            type: "gap", id: "w5-thu-v-pc", title: "Grammar · Right now",
+            task: "Поставьте глагол в Present Continuous.",
+            items: [
+              ["He ___ (put) his card in the machine.", ["is putting", "'s putting", "s putting"]],
+              ["He ___ (enter) his PIN.", ["is entering", "'s entering", "s entering"]],
+              ["The machine ___ (take) his card.", ["is taking", "'s taking", "s taking"]],
+              ["He ___ (try) to get it back.", ["is trying", "'s trying", "s trying"]],
+              ["He ___ (not / smile).", ["isn't smiling", "is not smiling", "'s not smiling"]],
+              ["Is he ___ (call) the bank? — No, he isn't.", ["calling"]],
+            ],
+          },
+          {
+            type: "write", id: "w5-thu-v-after", title: "After · What should he do?",
+            task: "Что Mr Bean должен сделать? Кому позвонить и что сказать?",
+            example: "He should call the bank.\n\"I'm afraid the cash machine took my card. Could you help me, please?\"",
+            minWords: 10,
+          },
+
+          // 07
+          { type: "heading", id: "w5-s07", stage: "07", title: "Grammar Clinic · Polite questions", min: 10 },
+          {
+            type: "rule", id: "w5-thu-polite", title: "Polite formulas",
+            table: {
+              head: ["", "Формула", "Пример"],
+              rows: [
+                ["🙏", "Could you + verb …, please?", "Could you repeat that, please?"],
+                ["✋", "Can I + verb …?", "Can I pay by card?"],
+                ["💬", "I'd like to + verb …", "I'd like to open an account."],
+                ["❓", "Do / Does + I / it + verb …?", "How much <b>does</b> it <b>cost</b>? — без -s после does!"],
+                ["📍", "Is there …?", "Is there a monthly fee?"],
+              ],
+            },
+            tips: ["<i>Give me…</i> и <i>I want…</i> в банке звучат грубо — заменяйте на <b>Could you…?</b> и <b>I'd like…</b>"],
+          },
+          {
+            type: "gap", id: "w5-thu-rude", title: "Rude → polite",
+            task: "Перепишите грубую или неправильную фразу вежливо и правильно — целым предложением.",
+            items: [
+              ["Give me a new card. → ___", ["Could you give me a new card, please?", "Can you give me a new card, please?", "Could I have a new card, please?", "Can I have a new card, please?", "Could you give me a new card?", "Can I get a new card, please?"]],
+              ["What documents I need? → ___", ["What documents do I need?"]],
+              ["Repeat! → ___", ["Could you repeat that, please?", "Can you repeat that, please?", "Could you repeat, please?", "Sorry, could you repeat that, please?"]],
+              ["How much it costs? → ___", ["How much does it cost?"]],
+              ["I want open account. → ___", ["I'd like to open an account, please.", "I'd like to open an account.", "I would like to open an account, please.", "I would like to open an account."]],
+            ],
+          },
+          {
+            type: "spinner", id: "w5-thu-spin", title: "Spin & ask",
+            task: "Крутите колесо → задайте вежливый вопрос для ситуации → партнёрша отвечает как сотрудник банка. Сохраните свой вопрос.",
+            options: [
+              ["The cash machine took your card", "Could you help me, please? The cash machine took my card."],
+              ["You didn't hear the number", "Sorry, could you repeat the number, please?"],
+              ["The clerk speaks too fast", "Could you speak more slowly, please?"],
+              ["You want to open an account", "I'd like to open an account, please."],
+              ["You want to know the fee", "Is there a monthly fee? How much does it cost?"],
+              ["You need a new card", "Can I get a new card, please? How long does it take?"],
+            ],
+          },
+
+          // 08
+          { type: "heading", id: "w5-s08", stage: "08", title: "Call the bank", min: 15 },
+          {
+            type: "cards", id: "w5-thu-steps", title: "5 steps of the call", cols: 5,
+            task: "Камеры выключены — как настоящий звонок. Вы Mr Bean: банкомат забрал вашу карту. Звонок 1: Tatiana звонит, Faina — Marta. Звонок 2: меняемся.",
+            cards: [
+              ["1 · Hello + problem", "<i>I'm afraid the cash machine took my card.</i>"],
+              ["2 · Name + card", "<i>It ends in four five two one.</i>"],
+              ["3 · Answer", "<i>Yes, I do. / No, I don't.</i>"],
+              ["4 · Ask", "<i>How long does it take?</i>"],
+              ["5 · Goodbye", "<i>No, that's all. Thank you!</i>"],
+            ],
+          },
+          {
+            type: "cards", id: "w5-thu-roles2", title: "Role cards · On the phone", cols: 2,
+            cards: [
+              ["Caller · you are Mr Bean", "Problem: the cash machine took your card. Or choose: card blocked, card lost, a strange payment.<br>Give your name and the last 4 numbers of your card.", "blush"],
+              ["Bank · Marta", "Start: <i>Banco Atlântico, Marta speaking.</i><br>Ask for name, card number and date of birth.<br>Block the card. New card: €10, 5 days.", "dark"],
+            ],
+          },
+          {
+            type: "flip", id: "w5-thu-surprises", title: "Surprises", mute: true,
+            task: "Julie открывает одну карточку в каждом звонке. Реагируйте!",
+            cards: [
+              ["Surprise 1", "Bad line: \"Sorry, I can't hear you. Can you call back?\""],
+              ["Surprise 2", "Security: \"What's your date of birth?\""],
+              ["Surprise 3", "\"There's a payment of €89 in Madrid. Is it you?\""],
+              ["Surprise 4", "\"A new card costs €10. Where do we send it?\""],
+            ],
+          },
+          {
+            type: "voice", id: "w5-thu-call-rec", title: "Record your call",
+            task: "Запишите свой звонок (или его часть) — 40–60 секунд. Это ваш результат урока.",
+          },
+
+          // 09
+          { type: "heading", id: "w5-s09", stage: "09", title: "Mistake Wall & Next Stop", min: 10 },
+          {
+            type: "gap", id: "w5-thu-wall", title: "Mistake Wall",
+            task: "Это реальные ошибки урока. Исправьте и назовите правило. Julie добавит фразы с урока в чат — исправьте их ниже.",
+            items: [
+              ["What documents I need? → ___", ["What documents do I need?"]],
+              ["How much does it costs? → ___", ["How much does it cost?"]],
+              ["Can I pay with card? → ___", ["Can I pay by card?"]],
+              ["My card don't work. → ___", ["My card doesn't work.", "My card does not work."]],
+              ["Is there a fee? — Yes, there's. → ___", ["Yes, there is.", "Yes there is"]],
+            ],
+          },
+          {
+            type: "write", id: "w5-thu-wall-own", title: "My mistakes today",
+            task: "Запишите 2 свои фразы с урока в правильном виде.",
             minWords: 8,
+          },
+          {
+            type: "rate", id: "w5-thu-rate", title: "How confident am I?",
+            task: "Честно оцените себя.",
+            items: ["I can open a bank account and ask about fees.", "I can understand and say numbers on the phone.", "I can solve a card problem on the phone."],
+          },
+          {
+            type: "cards", id: "w5-thu-next", title: "Next stop", cols: 2,
+            cards: [
+              ["Шаг 5 · Письмо и итоги", "Письмо в банк + повторение недели.<br><b>Срок:</b> воскресенье, 20:00.<br>Не забудьте нажать «Отправить»!", "dark"],
+              ["Next week", "Health &amp; Insurance: врач, аптека, страховка.", "blush"],
+            ],
           },
         ],
       },

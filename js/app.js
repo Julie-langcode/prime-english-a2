@@ -63,14 +63,17 @@
   const student = () => store.get("student", "");
 
   // ───────── progress
-  const autoTypes = new Set(["match", "choice", "tf", "builder", "gap", "order"]);
+  const autoTypes = new Set(["match", "choice", "tf", "builder", "gap", "order", "sort", "infogap"]);
   function blockDone(b) {
     const a = answers[b.id] || {};
     switch (b.type) {
       case "write": return words(a.text) >= Math.min(b.minWords || 1, 3);
       case "voice": return !!a.recorded;
       case "checklist": return Object.values(a.checks || {}).some(Boolean);
-      case "match": case "choice": case "tf": case "builder": case "gap": case "order": return !!a.checked;
+      case "match": case "choice": case "tf": case "builder": case "gap": case "order": case "sort": case "infogap": return !!a.checked;
+      case "form": return Object.values(a.vals || {}).filter((v) => String(v).trim()).length >= Math.ceil(b.fields.length / 2);
+      case "spinner": return (a.list || []).length > 0;
+      case "rate": return Object.keys(a.rate || {}).length === b.items.length;
       default: return null; // не учитывается
     }
   }
@@ -243,7 +246,8 @@
     main.innerHTML = "";
     const idx = w.days.indexOf(d);
     const prev = w.days[idx - 1], next = w.days[idx + 1];
-    const hasWork = d.blocks.some((b) => ["write", "voice", "choice", "gap", "match", "tf", "builder", "order", "checklist"].includes(b.type));
+    const hasWork = d.blocks.some((b) => ["write", "voice", "choice", "gap", "match", "tf", "builder", "order", "checklist", "sort", "infogap", "form", "spinner", "rate"].includes(b.type));
+    const heads = d.blocks.filter((b) => b.type === "heading" && b.id);
     const el = h(`
       <section class="dayview">
         <a class="back" href="#/week/${w.id}">← ${esc(w.code)} · ${esc(w.title)}</a>
@@ -260,7 +264,8 @@
           ${hasWork ? `<div class="progress"><span class="bar"><i id="dayBar"></i></span><span id="dayPct"></span></div>` : ""}
           ${nameBar()}
         </header>
-        <nav class="jump" aria-label="Задания дня">${(() => { let k = 0; return d.blocks.filter((b) => b.type !== "heading").map((b) => `<button type="button" data-jump="${b.id}"><b>${String(++k).padStart(2, "0")}</b> ${esc(b.title.split(" · ")[0])}</button>`).join(""); })()}</nav>
+        ${d.live ? `<div class="present-bar"><button type="button" class="btn small ghost" id="presentBtn">⛶ Режим показа для Zoom</button><span class="muted">Крупный шрифт и широкий экран — удобно показывать через демонстрацию экрана</span></div>` : ""}
+        <nav class="jump" aria-label="Задания дня">${heads.length >= 4 ? heads.map((b) => `<button type="button" data-jump="${b.id}">${esc(b.title)}</button>`).join("") : (() => { let k = 0; return d.blocks.filter((b) => b.type !== "heading").map((b) => `<button type="button" data-jump="${b.id}"><b>${String(++k).padStart(2, "0")}</b> ${esc(b.title.split(" · ")[0])}</button>`).join(""); })()}</nav>
         <div class="blocks"></div>
         ${hasWork ? sendPanelHtml() : ""}
         <nav class="pager">
@@ -271,6 +276,12 @@
     main.appendChild(el);
 
     wireNames(el);
+    const pb = el.querySelector("#presentBtn");
+    if (pb) {
+      const sync = () => { pb.textContent = document.body.classList.contains("present") ? "✕ Выйти из режима показа" : "⛶ Режим показа для Zoom"; };
+      pb.addEventListener("click", () => { document.body.classList.toggle("present"); sync(); });
+      sync();
+    } else document.body.classList.remove("present");
     el.querySelectorAll("[data-jump]").forEach((j) => j.addEventListener("click", () => {
       const t = document.getElementById(j.dataset.jump);
       if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 130, behavior: "smooth" });
@@ -307,9 +318,10 @@
   }
 
   function renderBlock(b, n, w, d) {
-    if (b.type === "heading") return h(`<h2 class="blocks-heading">${esc(b.title)}</h2>`);
-    const r = { vocab, vocabref, order, listen, links, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson, video }[b.type];
+    if (b.type === "heading") return h(`<h2 class="blocks-heading ${b.stage ? "stage" : ""}" ${b.id ? `id="${b.id}"` : ""}>${b.stage ? `<span class="stage-n">${esc(b.stage)}</span>` : ""}<span>${esc(b.title)}</span>${b.min ? `<span class="stage-m">${b.min} мин</span>` : ""}</h2>`);
+    const r = { vocab, vocabref, order, listen, links, match, choice, tf, builder, gap, write, voice, checklist, info, rule, lesson, video, sort, flip, cards, infogap, form, spinner, rate }[b.type];
     const el = r ? r(b, n, w, d) : shell(b, n, "");
+    if (b.timer) addTimer(el, b.timer);
     const rv = el.querySelector("[data-reveal]");
     if (rv) {
       const a = ans(b.id);
@@ -335,6 +347,8 @@
       case "gap": a.val = {}; b.items.forEach((it, i) => (a.val[i] = it[1][0])); break;
       case "order": a.seq = b.items.map((_, i) => i); break;
       case "builder": a.built = {}; b.items.forEach((s, i) => (a.built[i] = s.split(" ").map((_, k) => k))); break;
+      case "sort": a.place = {}; b.items.forEach((it, i) => (a.place[i] = it[1])); break;
+      case "infogap": { const me = igSide(b); if (me) { a.vals = a.vals || {}; a.vals[me.partner] = {}; b.fields.forEach((f, i) => (a.vals[me.partner][i] = b.banks[me.partner].rows[i])); } break; }
     }
   }
 
@@ -670,7 +684,198 @@
       <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" title="${esc(b.title)}" loading="lazy"
         allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
       ${b.note ? `<p class="hint">${esc(b.note)}</p>` : ""}
-      <a class="btn small ghost" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Открыть на YouTube ↗</a>`);
+      <div class="video-links"><a class="btn small primary" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">▶ Открыть на YouTube ↗</a>${b.backup ? `<a class="btn small ghost" href="https://www.youtube.com/watch?v=${encodeURIComponent(b.backup)}" target="_blank" rel="noopener">Запасное видео ↗</a>` : ""}</div>`);
+  }
+
+  // ───────── таймер для любого блока (b.timer = секунды)
+  function addTimer(el, sec) {
+    const head = el.querySelector(".block-head"); if (!head) return;
+    const fmt = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+    const t = h(`<button type="button" class="timer" aria-live="polite">⏱ <span>${fmt(sec)}</span> · старт</button>`);
+    let left = sec, iv = null;
+    const paint = () => { t.querySelector("span").textContent = fmt(left); };
+    t.addEventListener("click", () => {
+      if (iv) { clearInterval(iv); iv = null; t.lastChild.textContent = " · дальше"; return; }
+      if (left <= 0) { left = sec; t.classList.remove("done"); }
+      t.lastChild.textContent = " · пауза";
+      iv = setInterval(() => { left--; paint(); if (left <= 0) { clearInterval(iv); iv = null; t.classList.add("done"); t.lastChild.textContent = " · время!"; toast("⏱ Время вышло!"); } }, 1000);
+    });
+    head.appendChild(t);
+  }
+
+  // sort — разложить слова по коробкам (нажмите слово, потом коробку; или перетащите)
+  function sort(b, n) {
+    const a = ans(b.id); a.place = a.place || {};
+    const el = shell(b, n, `
+      <p class="hint">Нажмите на слово, потом на коробку. На компьютере можно перетаскивать мышкой. Слово в коробке — нажмите, чтобы вернуть.</p>
+      <div class="sort-pool" data-bin="pool"></div>
+      <div class="sort-bins">${b.bins.map((name, k) => `<div class="sort-bin" data-bin="${k}"><p class="sort-name">${esc(name)}</p><div class="sort-drop"></div></div>`).join("")}</div>
+      ${checkBar(b)}`);
+    let picked = null;
+    const order = shuffle(b.items.map((_, i) => i), hash(b.id));
+    const draw = (show) => {
+      let ok = 0;
+      const chip = (i) => {
+        const p = a.place[i], right = p === b.items[i][1];
+        if (show && p !== undefined && right) ok++;
+        return `<button type="button" class="tok sort-chip ${picked === i ? "picked" : ""} ${show && p !== undefined ? (right ? "good" : "bad") : ""}" draggable="true" data-i="${i}">${esc(b.items[i][0])}</button>`;
+      };
+      el.querySelector(".sort-pool").innerHTML = order.filter((i) => a.place[i] === undefined).map(chip).join("") || `<span class="ph">Все слова разложены ✓</span>`;
+      el.querySelectorAll(".sort-bin").forEach((bin) => { bin.querySelector(".sort-drop").innerHTML = order.filter((i) => a.place[i] === +bin.dataset.bin).map(chip).join(""); });
+      el.querySelectorAll(".sort-chip").forEach((c) => {
+        c.addEventListener("click", (e) => {
+          e.stopPropagation(); const i = +c.dataset.i;
+          if (a.place[i] !== undefined) { delete a.place[i]; picked = null; a.checked = false; draw(false); changed(el); return; }
+          picked = picked === i ? null : i; draw(false);
+        });
+        c.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/plain", c.dataset.i); });
+      });
+      return ok;
+    };
+    const drop = (i, k) => { if (k === "pool") delete a.place[i]; else a.place[i] = +k; picked = null; a.checked = false; el.querySelector(".score").textContent = ""; draw(false); changed(el); };
+    el.querySelectorAll("[data-bin]").forEach((zone) => {
+      zone.addEventListener("click", () => { if (picked !== null) drop(picked, zone.dataset.bin); });
+      zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("over"); });
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", (e) => { e.preventDefault(); zone.classList.remove("over"); drop(+e.dataTransfer.getData("text/plain"), zone.dataset.bin); });
+    });
+    const check = () => { const ok = draw(true); a.checked = true; a.score = `${ok}/${b.items.length}`; el.querySelector(".score").textContent = `${ok} из ${b.items.length}`; changed(el); };
+    el.querySelector("[data-check]").addEventListener("click", check);
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
+    draw(false); if (a.checked) check();
+    return el;
+  }
+
+  // flip — карточки-перевёртыши (лицо / оборот, озвучка оборота)
+  function flip(b, n) {
+    const el = shell(b, n, `<div class="flips ${b.small ? "small" : ""}">${b.cards.map(([front, back, say], i) => `
+      <button type="button" class="flipcard" data-i="${i}" aria-pressed="false">
+        <span class="fc-front">${esc(front)}</span>
+        <span class="fc-back">${esc(back)}</span>
+      </button>`).join("")}</div>
+      <div class="flip-tools"><button type="button" class="btn small ghost" data-all>Открыть все</button><button type="button" class="btn small ghost" data-none>Закрыть все</button></div>`);
+    el.querySelectorAll(".flipcard").forEach((c) => c.addEventListener("click", () => {
+      const on = c.classList.toggle("flipped"); c.setAttribute("aria-pressed", on);
+      const card = b.cards[+c.dataset.i];
+      if (on && card[2] !== false && !b.mute) speak(typeof card[2] === "string" ? card[2] : card[1]);
+    }));
+    el.querySelector("[data-all]").addEventListener("click", () => el.querySelectorAll(".flipcard").forEach((c) => c.classList.add("flipped")));
+    el.querySelector("[data-none]").addEventListener("click", () => el.querySelectorAll(".flipcard").forEach((c) => c.classList.remove("flipped")));
+    return el;
+  }
+
+  // cards — карточки ролей / шагов
+  function cards(b, n) {
+    return shell(b, n, `<div class="rolecards cols-${b.cols || b.cards.length}">${b.cards.map(([title, text, tone]) => `
+      <div class="rolecard ${tone || ""}"><p class="rc-title">${esc(title)}</p><div class="rc-text">${text}</div></div>`).join("")}</div>`);
+  }
+
+  // infogap — у каждой своя карточка банка, о второй нужно спросить
+  function igSide(b) {
+    const me = student(); const names = Object.keys(b.banks);
+    if (!names.includes(me)) return null;
+    return { me, partner: names.find((x) => x !== me) };
+  }
+  function infogap(b, n) {
+    const a = ans(b.id); a.vals = a.vals || {};
+    const side = igSide(b);
+    if (!side) {
+      const el = shell(b, n, `<div class="ig-pick"><p>Кто вы? Карточка у каждой своя — не показывайте её партнёрше.</p>
+        <div class="opts">${Object.keys(b.banks).map((s) => `<button type="button" class="opt" data-me="${s}">Я ${s}</button>`).join("")}</div></div>`);
+      el.querySelectorAll("[data-me]").forEach((x) => x.addEventListener("click", () => {
+        store.set("student", x.dataset.me);
+        document.querySelectorAll(".namebar [data-name]").forEach((c) => c.classList.toggle("on", c.dataset.name === x.dataset.me));
+        el.replaceWith(renderBlock(b, n));
+      }));
+      return el;
+    }
+    const mine = b.banks[side.me], theirs = b.banks[side.partner];
+    a.vals[side.partner] = a.vals[side.partner] || {};
+    const v = a.vals[side.partner];
+    const el = shell(b, n, `
+      <div class="ig">
+        <div class="ig-card"><p class="ig-tag">🔒 Ваша карточка · ${esc(side.me)}</p><h3>${esc(mine.name)}</h3>
+          <dl>${b.fields.map((f, i) => `<div><dt>${esc(f)}</dt><dd>${esc(mine.rows[i])}</dd></div>`).join("")}</dl></div>
+        <div class="ig-ask"><p class="ig-tag">❓ Спросите ${esc(side.partner)} · ${esc(theirs.name)}</p>
+          <ol class="gap ig-fields">${b.fields.map((f, i) => `<li data-i="${i}"><label>${esc(f)}<input type="text" autocomplete="off" value="${esc(v[i] || "")}"></label><span class="mark"></span></li>`).join("")}</ol></div>
+      </div>
+      <p class="ig-q">Задавайте вопросы: ${b.questions.map((q) => `<button type="button" class="tok" data-say="${esc(q)}">▶ ${esc(q)}</button>`).join(" ")}</p>
+      <label class="ig-decision"><b>Our choice for Anna:</b><textarea rows="2" placeholder="Banco … because …">${esc(a.decision || "")}</textarea></label>
+      ${checkBar(b)}`);
+    bindSay(el);
+    el.querySelectorAll(".ig-fields input").forEach((inp) => inp.addEventListener("input", () => { v[inp.closest("li").dataset.i] = inp.value; a.checked = false; el.querySelector(".score").textContent = ""; inp.closest("li").className = ""; changed(el); }));
+    el.querySelector(".ig-decision textarea").addEventListener("input", (e) => { a.decision = e.target.value; changed(el); });
+    const check = () => {
+      let ok = 0;
+      el.querySelectorAll(".ig-fields li").forEach((li) => {
+        const i = +li.dataset.i, val = norm(v[i] || ""), keys = theirs.keys[i];
+        const right = !!val && keys.every((k) => val.includes(norm(k)));
+        ok += right; li.className = val ? (right ? "ok" : "no") : "";
+        li.querySelector(".mark").textContent = val && !right ? "→ " + theirs.rows[i] : "";
+      });
+      a.checked = true; a.score = `${ok}/${b.fields.length}`; el.querySelector(".score").textContent = `${ok} из ${b.fields.length}`; changed(el);
+    };
+    el.querySelector("[data-check]").addEventListener("click", check);
+    el.querySelector("[data-reset]").addEventListener("click", () => { answers[b.id] = {}; el.replaceWith(renderBlock(b, n)); save(); });
+    if (a.checked) check();
+    return el;
+  }
+
+  // form — анкета (заполняет «сотрудник банка»)
+  function form(b, n) {
+    const a = ans(b.id); a.vals = a.vals || {};
+    const el = shell(b, n, `<div class="bankform"><p class="bf-head">${esc(b.formTitle || "Account opening form")}</p>
+      ${b.fields.map((f, i) => `<label><span>${esc(f)}</span><input type="text" autocomplete="off" value="${esc(a.vals[i] || "")}"></label>`).join("")}</div>`);
+    el.querySelectorAll(".bankform input").forEach((inp, i) => inp.addEventListener("input", () => { a.vals[i] = inp.value; changed(el); }));
+    return el;
+  }
+
+  // spinner — колесо ситуаций: крутите, задайте вежливый вопрос, сравните с образцом
+  function spinner(b, n) {
+    const a = ans(b.id); a.list = a.list || [];
+    const el = shell(b, n, `
+      <div class="spin">
+        <div class="spin-wheel" aria-hidden="true"><span>?</span></div>
+        <div class="spin-side">
+          <button type="button" class="btn primary" data-spin>🎡 Крутить колесо</button>
+          <p class="spin-sit" aria-live="polite">Нажмите — и получите ситуацию в банке.</p>
+          <div class="spin-answer" hidden>
+            <input type="text" placeholder="Ваш вежливый вопрос…" autocomplete="off">
+            <div class="spin-actions"><button type="button" class="btn small primary" data-save>Сохранить</button><button type="button" class="btn small ghost" data-model>Показать образец</button></div>
+            <p class="spin-model" hidden></p>
+          </div>
+        </div>
+      </div>
+      <ol class="spin-log">${a.list.map((x) => `<li><b>${esc(x.sit)}</b><span>${esc(x.q)}</span></li>`).join("")}</ol>`);
+    let cur = null;
+    const wheel = el.querySelector(".spin-wheel"), sit = el.querySelector(".spin-sit"), box = el.querySelector(".spin-answer"), inp = box.querySelector("input"), model = el.querySelector(".spin-model");
+    el.querySelector("[data-spin]").addEventListener("click", () => {
+      let k = 0, i = 0; wheel.classList.add("go"); box.hidden = true; model.hidden = true;
+      const iv = setInterval(() => {
+        i = Math.floor(Math.random() * b.options.length); sit.textContent = b.options[i][0];
+        if (++k > 14) { clearInterval(iv); wheel.classList.remove("go"); cur = i; wheel.querySelector("span").textContent = String(i + 1); box.hidden = false; inp.value = ""; inp.focus(); }
+      }, 90);
+    });
+    el.querySelector("[data-model]").addEventListener("click", () => { if (cur === null) return; model.textContent = "Образец: " + b.options[cur][1]; model.hidden = false; speak(b.options[cur][1]); });
+    el.querySelector("[data-save]").addEventListener("click", () => {
+      if (cur === null || !inp.value.trim()) return toast("Сначала напишите вопрос");
+      a.list.push({ sit: b.options[cur][0], q: inp.value.trim() }); changed(el);
+      el.querySelector(".spin-log").insertAdjacentHTML("beforeend", `<li><b>${esc(b.options[cur][0])}</b><span>${esc(inp.value.trim())}</span></li>`);
+      toast("Сохранено ✓ Крутите ещё!"); inp.value = "";
+    });
+    return el;
+  }
+
+  // rate — самооценка: not yet / almost / confident
+  function rate(b, n) {
+    const a = ans(b.id); a.rate = a.rate || {};
+    const lv = b.levels || ["not yet", "almost", "confident"];
+    const el = shell(b, n, `<ol class="rate">${b.items.map((it, i) => `<li data-i="${i}"><p>${esc(it)}</p><div class="opts">${lv.map((l, j) => `<button type="button" class="opt lv${j} ${a.rate[i] === j ? "on" : ""}" data-j="${j}">${esc(l)}</button>`).join("")}</div></li>`).join("")}</ol>`);
+    el.querySelectorAll(".opt").forEach((o) => o.addEventListener("click", () => {
+      const li = o.closest("li"); a.rate[li.dataset.i] = +o.dataset.j; a.levels = lv; a.items = b.items;
+      li.querySelectorAll(".opt").forEach((x) => x.classList.toggle("on", x === o)); changed(el);
+    }));
+    return el;
   }
 
   // checklist
@@ -723,13 +928,16 @@
     const total = b.stages.reduce((s, x) => s + x[3], 0);
     const el = shell(b, n, `
       <div class="live-links">
-        <a class="btn primary" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Открыть доску Miro ↗</a>
+        ${b.onPage ? `<button type="button" class="btn primary" data-start>Начать урок ↓</button>` : `<a class="btn primary" href="${esc(CFG.miroBoard)}" target="_blank" rel="noopener">Открыть доску Miro ↗</a>`}
         ${CFG.zoomLink ? `<a class="btn ghost" href="${esc(CFG.zoomLink)}" target="_blank" rel="noopener">Войти в Zoom ↗</a>` : `<span class="muted">Ссылку на Zoom ${esc(CFG.teacherName || "преподаватель")} пришлёт в чат</span>`}
       </div>
-      <ol class="stages">${b.stages.map(([num, t, d, m]) => `
-        <li style="--w:${(m / total) * 100}%"><span class="st-n">${num}</span><div><b>${esc(t)}</b><span>${esc(d)}</span></div><span class="st-m">${m} мин</span></li>`).join("")}
+      <ol class="stages">${b.stages.map(([num, t, d, m, target]) => `
+        <li style="--w:${(m / total) * 100}%" ${target ? `data-go="${target}" class="go" tabindex="0" role="button"` : ""}><span class="st-n">${num}</span><div><b>${esc(t)}</b><span>${esc(d)}</span></div><span class="st-m">${m} мин</span></li>`).join("")}
       </ol>
-      <p class="muted">Всего ${total} минут.</p>`);
+      <p class="muted">Всего ${total} минут${b.onPage ? " · нажмите на этап, чтобы перейти к заданиям" : ""}.</p>`);
+    const go = (id) => { const t = document.getElementById(id); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" }); };
+    el.querySelectorAll("[data-go]").forEach((li) => { li.addEventListener("click", () => go(li.dataset.go)); li.addEventListener("keydown", (e) => { if (e.key === "Enter") go(li.dataset.go); }); });
+    const st = el.querySelector("[data-start]"); if (st) st.addEventListener("click", () => go(b.stages[0][4]));
     return el;
   }
 
@@ -782,7 +990,7 @@
       </section>`;
   }
 
-  const TYPE_RU = { match: "сопоставление", choice: "выбор", tf: "true/false", builder: "сборка фраз", gap: "пропуски", order: "порядок", write: "письменно", voice: "голос", checklist: "чек-лист" };
+  const TYPE_RU = { match: "сопоставление", choice: "выбор", tf: "true/false", builder: "сборка фраз", gap: "пропуски", order: "порядок", write: "письменно", voice: "голос", checklist: "чек-лист", sort: "сортировка", infogap: "info gap", form: "анкета", spinner: "колесо вопросов", rate: "самооценка" };
 
   // Строки для таблицы: одна строка = одно задание
   function rowsFor(w, d) {
@@ -803,6 +1011,11 @@
         case "order": answer = (a.seq || []).map((k, pos) => `${pos + 1}) ${b.items[k]}${k === pos ? " ✓" : " ✗"}`).join("\n"); break;
         case "write": answer = (a.text || "").trim() || "— пусто —"; break;
         case "voice": answer = a.recorded ? "голосовое записано, отправлено отдельно" : "нет записи"; break;
+        case "sort": answer = b.bins.map((bn, k) => `${bn}: ${b.items.filter((_, i) => a.place && a.place[i] === k).map((it) => it[0] + (it[1] === k ? " ✓" : " ✗")).join(", ") || "—"}`).join("\n"); break;
+        case "infogap": { const side = igSide(b); const v = side && a.vals ? a.vals[side.partner] || {} : {}; answer = side ? `Банк партнёрши: ${b.banks[side.partner].name}\n` + b.fields.map((f, i) => `${f}: ${v[i] || "—"}`).join("\n") + `\nВыбор: ${a.decision || "—"}` : "— имя не выбрано —"; break; }
+        case "form": answer = b.fields.map((f, i) => `${f}: ${(a.vals && a.vals[i]) || "—"}`).join("\n"); break;
+        case "spinner": answer = (a.list || []).map((x, i) => `${i + 1}) ${x.sit} → ${x.q}`).join("\n") || "—"; break;
+        case "rate": { const lv = b.levels || ["not yet", "almost", "confident"]; answer = b.items.map((it, i) => `${it}: ${a.rate && a.rate[i] !== undefined ? lv[a.rate[i]] : "—"}`).join("\n"); break; }
         case "checklist": { const items = b.fromCanDo ? w.canDo : b.items; answer = items.map((it, k) => `${a.checks && a.checks[k] ? "✅" : "▫️"} ${it}`).join("\n"); break; }
       }
       rows.push({ n, task: `${n}. ${b.title}`, type: TYPE_RU[b.type], answer, score: autoTypes.has(b.type) ? (a.checked ? (a.firstScore ? `${a.firstScore} (потом открыла ответы)` : a.score) : "не проверено") : "" });
