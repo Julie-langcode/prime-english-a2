@@ -684,7 +684,7 @@
       <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" title="${esc(b.title)}" loading="lazy"
         allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
       ${b.note ? `<p class="hint">${esc(b.note)}</p>` : ""}
-      <div class="video-links"><a class="btn small primary" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">▶ Открыть на YouTube ↗</a>${b.backup ? `<a class="btn small ghost" href="https://www.youtube.com/watch?v=${encodeURIComponent(b.backup)}" target="_blank" rel="noopener">Запасное видео ↗</a>` : ""}</div>`);
+      <div class="video-links"><a class="btn small primary" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">▶ Открыть на YouTube ↗</a>${b.backup ? `<a class="btn small ghost" href="https://www.youtube.com/watch?v=${encodeURIComponent(b.backup)}" target="_blank" rel="noopener">Additional video ↗</a>` : ""}</div>`);
   }
 
   // ───────── таймер для любого блока (b.timer = секунды)

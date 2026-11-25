@@ -10,7 +10,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
     code: "W5",
     title: "Bank & Money",
     subtitle: "Открываем счёт, решаем проблему с картой, понимаем цифры",
-    dates: "16–20 ноября",
+    dates: "13–27 ноября",
     from: "Без счёта",
     to: "Свой банк",
     story:
@@ -449,7 +449,7 @@ window.PE_WEEKS = window.PE_WEEKS || {};
         slug: "thu",
         step: "Живая практика",
         day: "Чт",
-        date: "19.11",
+        date: "26.11",
         label: "Live Lesson",
         title: "At the Bank · Role-play Studio",
         where: "Zoom + сайт · 10:00–11:30",
